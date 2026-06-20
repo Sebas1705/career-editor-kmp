@@ -13,12 +13,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.SoftSkill
+import dev.sebas1705.careereditor.data.model.resolve
 import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
 @Composable
 fun SoftSkillsScreen(
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (SoftSkill) -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
@@ -29,40 +32,36 @@ fun SoftSkillsScreen(
         SoftSkillEditScreen(
             skill = selected!!,
             state = state,
+            selectedLangCode = selectedLangCode,
+            onSelectLang = onSelectLang,
             onSave = { onSave(it); selected = null },
             onBack = { selected = null },
             onClearSuccess = onClearSuccess,
             onClearError = onClearError
         )
     } else {
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            SectionHeader("Habilidades Blandas", "${state.softSkills.size} habilidades")
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize()) {
+            LanguageTabs(state.languages.supported, selectedLangCode, onSelectLang)
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+                SectionHeader("Habilidades Blandas", "${state.softSkills.size} habilidades")
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.softSkills) { skill ->
-                    Card(
-                        onClick = { selected = skill },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(skill.icon, style = MaterialTheme.typography.headlineSmall)
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(state.softSkills) { skill ->
+                        Card(
+                            onClick = { selected = skill },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(skill.name.resolve(selectedLangCode), style = MaterialTheme.typography.titleMedium)
+                                    Text(skill.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(skill.name_es, style = MaterialTheme.typography.titleMedium)
-                                Text(skill.name_en, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -77,40 +76,49 @@ fun SoftSkillsScreen(
 fun SoftSkillEditScreen(
     skill: SoftSkill,
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (SoftSkill) -> Unit,
     onBack: () -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var iconVal by remember { mutableStateOf(skill.icon) }
-    var nameEnVal by remember { mutableStateOf(skill.name_en) }
-    var nameEsVal by remember { mutableStateOf(skill.name_es) }
+    var name by remember(skill) { mutableStateOf(skill.name) }
+    val lang = selectedLangCode
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(skill.name_es) },
+                title = { Text(skill.name.resolve(lang).ifBlank { skill.id }) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)
-        ) {
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            LanguageTabs(state.languages.supported, lang, onSelectLang)
 
-            FieldGroup("Editar soft skill") {
-                SectionField(label = "Icono (emoji)", value = iconVal, onValueChange = { iconVal = it }, singleLine = true)
-                SectionField(label = "Nombre (EN)", value = nameEnVal, onValueChange = { nameEnVal = it }, required = true, singleLine = true)
-                SectionField(label = "Nombre (ES)", value = nameEsVal, onValueChange = { nameEsVal = it }, required = true, singleLine = true)
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
+            ) {
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
+
+                FieldGroup("Nombre [$lang]") {
+                    SectionField(
+                        label = "Nombre",
+                        value = name[lang] ?: "",
+                        onValueChange = { name = name + (lang to it) },
+                        required = true,
+                        singleLine = true
+                    )
+                }
+
+                SaveButton(
+                    onClick = { onSave(skill.copy(name = name)) },
+                    isLoading = state.isLoading,
+                    enabled = (name[lang] ?: "").isNotBlank()
+                )
             }
-
-            SaveButton(
-                onClick = { onSave(skill.copy(icon = iconVal, name_en = nameEnVal, name_es = nameEsVal)) },
-                isLoading = state.isLoading,
-                enabled = nameEnVal.isNotBlank() && nameEsVal.isNotBlank()
-            )
         }
     }
 }

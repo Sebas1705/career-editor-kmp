@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import dev.sebas1705.careereditor.data.model.Language
 
 @Composable
 fun SectionField(
@@ -134,6 +135,41 @@ fun SectionHeader(title: String, subtitle: String? = null) {
         Text(title, style = MaterialTheme.typography.headlineSmall)
         if (subtitle != null) {
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/**
+ * Tab row for switching between content languages when editing.
+ * Only renders when there are 2+ supported languages.
+ */
+@Composable
+fun LanguageTabs(
+    languages: List<Language>,
+    selectedCode: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (languages.size < 2) return
+    val selectedIndex = languages.indexOfFirst { it.code == selectedCode }.coerceAtLeast(0)
+    ScrollableTabRow(
+        selectedTabIndex = selectedIndex,
+        modifier = modifier.fillMaxWidth(),
+        edgePadding = 0.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.primary
+    ) {
+        languages.forEach { lang ->
+            Tab(
+                selected = lang.code == selectedCode,
+                onClick = { onSelect(lang.code) },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(lang.code.uppercase(), style = MaterialTheme.typography.labelLarge)
+                        Text(lang.labelNative, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            )
         }
     }
 }

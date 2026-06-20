@@ -12,13 +12,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Education
-import dev.sebas1705.careereditor.data.model.LocalizedText
+import dev.sebas1705.careereditor.data.model.resolve
 import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
 @Composable
 fun EducationScreen(
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (Education) -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
@@ -29,33 +31,38 @@ fun EducationScreen(
         EducationEditScreen(
             education = selected!!,
             state = state,
+            selectedLangCode = selectedLangCode,
+            onSelectLang = onSelectLang,
             onSave = { onSave(it); selected = null },
             onBack = { selected = null },
             onClearSuccess = onClearSuccess,
             onClearError = onClearError
         )
     } else {
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            SectionHeader("Formación Académica", "${state.education.size} entradas")
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize()) {
+            LanguageTabs(state.languages.supported, selectedLangCode, onSelectLang)
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+                SectionHeader("Formación Académica", "${state.education.size} entradas")
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.education) { edu ->
-                    Card(
-                        onClick = { selected = edu },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(Modifier.padding(16.dp)) {
-                            Text(edu.icon, style = MaterialTheme.typography.headlineMedium)
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(edu.degree.es, style = MaterialTheme.typography.titleMedium)
-                                Text(edu.school, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                                Text(edu.period.es, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(state.education) { edu ->
+                        Card(
+                            onClick = { selected = edu },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(16.dp)) {
+                                Text(edu.icon, style = MaterialTheme.typography.headlineMedium)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(edu.degree.resolve(selectedLangCode), style = MaterialTheme.typography.titleMedium)
+                                    Text(edu.school, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                                    Text(edu.period.resolve(selectedLangCode), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                         }
                     }
@@ -70,61 +77,71 @@ fun EducationScreen(
 fun EducationEditScreen(
     education: Education,
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (Education) -> Unit,
     onBack: () -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var iconVal by remember { mutableStateOf(education.icon) }
-    var degreeEnVal by remember { mutableStateOf(education.degree.en) }
-    var degreeEsVal by remember { mutableStateOf(education.degree.es) }
-    var schoolVal by remember { mutableStateOf(education.school) }
-    var periodEnVal by remember { mutableStateOf(education.period.en) }
-    var periodEsVal by remember { mutableStateOf(education.period.es) }
-    var detailEnVal by remember { mutableStateOf(education.detail.en) }
-    var detailEsVal by remember { mutableStateOf(education.detail.es) }
+    var icon   by remember(education) { mutableStateOf(education.icon) }
+    var school by remember(education) { mutableStateOf(education.school) }
+    var degree by remember(education) { mutableStateOf(education.degree) }
+    var period by remember(education) { mutableStateOf(education.period) }
+    var detail by remember(education) { mutableStateOf(education.detail) }
+
+    val lang = selectedLangCode
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(education.school, maxLines = 1) },
+                title = { Text(school.ifBlank { education.id }, maxLines = 1) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)
-        ) {
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            LanguageTabs(state.languages.supported, lang, onSelectLang)
 
-            FieldGroup("Titulación") {
-                SectionField(label = "Icono (emoji)", value = iconVal, onValueChange = { iconVal = it }, singleLine = true)
-                SectionField(label = "Titulación (EN)", value = degreeEnVal, onValueChange = { degreeEnVal = it }, required = true, singleLine = true)
-                SectionField(label = "Titulación (ES)", value = degreeEsVal, onValueChange = { degreeEsVal = it }, required = true, singleLine = true)
-                SectionField(label = "Centro educativo", value = schoolVal, onValueChange = { schoolVal = it }, required = true, singleLine = true)
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Periodo y detalle") {
-                SectionField(label = "Periodo (EN)", value = periodEnVal, onValueChange = { periodEnVal = it }, singleLine = true)
-                SectionField(label = "Periodo (ES)", value = periodEsVal, onValueChange = { periodEsVal = it }, singleLine = true)
-                SectionField(label = "Detalle (EN)", value = detailEnVal, onValueChange = { detailEnVal = it })
-                SectionField(label = "Detalle (ES)", value = detailEsVal, onValueChange = { detailEsVal = it })
-            }
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
+            ) {
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            SaveButton(
-                onClick = {
-                    onSave(education.copy(
-                        icon = iconVal,
-                        degree = LocalizedText(degreeEnVal, degreeEsVal),
-                        school = schoolVal,
-                        period = LocalizedText(periodEnVal, periodEsVal),
-                        detail = LocalizedText(detailEnVal, detailEsVal)
-                    ))
-                },
-                isLoading = state.isLoading,
-                enabled = degreeEsVal.isNotBlank() && schoolVal.isNotBlank()
-            )
+                FieldGroup("Centro (no localizable)") {
+                    SectionField("Icono (emoji)", icon, { icon = it }, singleLine = true)
+                    SectionField("Centro educativo", school, { school = it }, required = true, singleLine = true)
+                }
+
+                FieldGroup("Titulación, periodo y detalle [$lang]") {
+                    SectionField(
+                        label = "Titulación",
+                        value = degree[lang] ?: "",
+                        onValueChange = { degree = degree + (lang to it) },
+                        required = true, singleLine = true
+                    )
+                    SectionField(
+                        label = "Periodo",
+                        value = period[lang] ?: "",
+                        onValueChange = { period = period + (lang to it) },
+                        singleLine = true
+                    )
+                    SectionField(
+                        label = "Detalle",
+                        value = detail[lang] ?: "",
+                        onValueChange = { detail = detail + (lang to it) }
+                    )
+                }
+
+                SaveButton(
+                    onClick = {
+                        onSave(education.copy(icon = icon, school = school, degree = degree, period = period, detail = detail))
+                    },
+                    isLoading = state.isLoading,
+                    enabled = school.isNotBlank()
+                )
+            }
         }
     }
 }

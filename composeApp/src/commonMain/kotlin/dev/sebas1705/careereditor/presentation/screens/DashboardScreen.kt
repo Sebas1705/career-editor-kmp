@@ -46,8 +46,8 @@ fun DashboardScreen(state: CareerUiState, onNavigate: (String) -> Unit) {
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(state.personal.name, style = MaterialTheme.typography.titleLarge)
-                        Text(state.personal.roleEs, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text(state.personal.locationEs, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(state.personal.role.values.firstOrNull() ?: "", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(state.personal.location.values.firstOrNull() ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }

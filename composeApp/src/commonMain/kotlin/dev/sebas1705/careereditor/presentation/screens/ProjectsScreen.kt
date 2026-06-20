@@ -11,17 +11,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.sebas1705.careereditor.data.model.LocalizedText
 import dev.sebas1705.careereditor.data.model.Project
+import dev.sebas1705.careereditor.data.model.resolve
 import dev.sebas1705.careereditor.presentation.components.*
-import androidx.compose.foundation.layout.FlowRowScope
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
-private val contextColors = mapOf(
-    "work" to "💼",
-    "academic" to "🎓",
-    "personal" to "⭐"
-)
+private val contextIcons = mapOf("work" to "💼", "academic" to "🎓", "personal" to "⭐")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -59,15 +54,20 @@ fun ProjectsScreen(
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(contextColors[project.context] ?: "📁", style = MaterialTheme.typography.titleMedium)
+                                Text(contextIcons[project.context] ?: "📁", style = MaterialTheme.typography.titleMedium)
                                 Column(Modifier.weight(1f)) {
                                     Text(project.name, style = MaterialTheme.typography.titleMedium)
-                                    Text(project.desc.es, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                                    Text(
+                                        project.desc.resolve("en"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2
+                                    )
                                 }
                             }
                             if (project.tags.isNotEmpty()) {
                                 Spacer(Modifier.height(8.dp))
-                                FlowRow {
+                                androidx.compose.foundation.layout.FlowRow {
                                     project.tags.take(5).forEach { tag -> TagChip(tag) }
                                     if (project.tags.size > 5) TagChip("+${project.tags.size - 5}")
                                 }
@@ -80,7 +80,7 @@ fun ProjectsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProjectEditScreen(
     project: Project,
@@ -90,17 +90,15 @@ fun ProjectEditScreen(
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var name by remember { mutableStateOf(project.name) }
-    var context by remember { mutableStateOf(project.context) }
-    var descEn by remember { mutableStateOf(project.desc.en) }
-    var descEs by remember { mutableStateOf(project.desc.es) }
-    var longDescEn by remember { mutableStateOf(project.long_desc.en) }
-    var longDescEs by remember { mutableStateOf(project.long_desc.es) }
-    var tags by remember { mutableStateOf(project.tags.joinToString(", ")) }
-    var github by remember { mutableStateOf(project.github ?: "") }
-    var demo by remember { mutableStateOf(project.demo ?: "") }
+    var name    by remember(project) { mutableStateOf(project.name) }
+    var context by remember(project) { mutableStateOf(project.context) }
+    var desc    by remember(project) { mutableStateOf(project.desc) }
+    var tags    by remember(project) { mutableStateOf(project.tags.joinToString(", ")) }
+    var github  by remember(project) { mutableStateOf(project.github ?: "") }
+    var demo    by remember(project) { mutableStateOf(project.demo ?: "") }
 
-    val isValid = name.isNotBlank()
+    // Per-project editing uses all languages from the state
+    var editingLang by remember { mutableStateOf(state.languages.default.ifBlank { "en" }) }
 
     Scaffold(
         topBar = {
@@ -110,50 +108,47 @@ fun ProjectEditScreen(
             )
         }
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)
-        ) {
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            LanguageTabs(state.languages.supported, editingLang, onSelect = { editingLang = it })
 
-            FieldGroup("General") {
-                SectionField("Nombre del proyecto", name, { name = it }, required = true, singleLine = true)
-                SectionField("Contexto (work / academic / personal)", context, { context = it }, singleLine = true)
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Descripciones") {
-                SectionField("Descripción corta (EN)", descEn, { descEn = it })
-                SectionField("Descripción corta (ES)", descEs, { descEs = it })
-                SectionField("Descripción larga (EN)", longDescEn, { longDescEn = it })
-                SectionField("Descripción larga (ES)", longDescEs, { longDescEs = it })
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Tags y links") {
-                SectionField("Tags (separados por coma)", tags, { tags = it }, supportingText = "Ej: Kotlin, Jetpack Compose, Firebase")
-                SectionField("GitHub URL", github, { github = it }, singleLine = true)
-                SectionField("Demo URL", demo, { demo = it }, singleLine = true)
-            }
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
+            ) {
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            SaveButton(
-                onClick = {
-                    onSave(project.copy(
-                        name = name, context = context,
-                        desc = LocalizedText(descEn, descEs),
-                        long_desc = LocalizedText(longDescEn, longDescEs),
-                        tags = tags.split(",").map { it.trim() }.filter { it.isNotBlank() },
-                        github = github.ifBlank { null },
-                        demo = demo.ifBlank { null }
-                    ))
-                },
-                isLoading = state.isLoading,
-                enabled = isValid
-            )
+                FieldGroup("General (no localizable)") {
+                    SectionField("Nombre del proyecto", name, { name = it }, required = true, singleLine = true)
+                    SectionField(
+                        "Contexto", context, { context = it },
+                        singleLine = true, supportingText = "work / academic / personal"
+                    )
+                    SectionField("Tags (separados por coma)", tags, { tags = it }, supportingText = "Ej: Kotlin, Firebase")
+                    SectionField("GitHub URL", github, { github = it }, singleLine = true)
+                    SectionField("Demo URL", demo, { demo = it }, singleLine = true)
+                }
+
+                FieldGroup("Descripción [$editingLang]") {
+                    SectionField(
+                        label = "Descripción",
+                        value = desc[editingLang] ?: "",
+                        onValueChange = { desc = desc + (editingLang to it) }
+                    )
+                }
+
+                SaveButton(
+                    onClick = {
+                        onSave(project.copy(
+                            name = name, context = context, desc = desc,
+                            tags = tags.split(",").map { it.trim() }.filter { it.isNotBlank() },
+                            github = github.ifBlank { null },
+                            demo = demo.ifBlank { null }
+                        ))
+                    },
+                    isLoading = state.isLoading,
+                    enabled = name.isNotBlank()
+                )
+            }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FlowRow(content: @Composable FlowRowScope.() -> Unit) {
-    androidx.compose.foundation.layout.FlowRow(content = content)
 }

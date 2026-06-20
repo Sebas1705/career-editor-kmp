@@ -31,7 +31,6 @@ private enum class Section(
     SETTINGS("Ajustes", Icons.Default.Settings, "settings")
 }
 
-// Bottom nav tabs (subset shown in the bar)
 private val bottomNavItems = listOf(
     Section.DASHBOARD,
     Section.PERSONAL,
@@ -50,6 +49,7 @@ fun App() {
         val settingsState by viewModel.settingsState.collectAsState()
         val loginLoading by viewModel.loginLoading.collectAsState()
         val loginError by viewModel.loginError.collectAsState()
+        val selectedLangCode by viewModel.selectedLangCode.collectAsState()
 
         AnimatedContent(
             targetState = authState,
@@ -69,7 +69,8 @@ fun App() {
                 AuthState.Authenticated -> MainScaffold(
                     viewModel = viewModel,
                     state = state,
-                    settingsState = settingsState
+                    settingsState = settingsState,
+                    selectedLangCode = selectedLangCode
                 )
             }
         }
@@ -81,13 +82,12 @@ fun App() {
 private fun MainScaffold(
     viewModel: CareerViewModel,
     state: dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState,
-    settingsState: dev.sebas1705.careereditor.presentation.viewmodel.SettingsUiState
+    settingsState: dev.sebas1705.careereditor.presentation.viewmodel.SettingsUiState,
+    selectedLangCode: String
 ) {
     var currentSection by remember { mutableStateOf(Section.DASHBOARD) }
-    // For sub-screens navigated from Dashboard
     var pendingRoute by remember { mutableStateOf<String?>(null) }
 
-    // Handle route from dashboard quick actions
     LaunchedEffect(pendingRoute) {
         pendingRoute?.let { route ->
             Section.entries.find { it.route == route }?.let { currentSection = it }
@@ -106,9 +106,7 @@ private fun MainScaffold(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
@@ -143,13 +141,47 @@ private fun MainScaffold(
                             Section.entries.find { it.route == route }?.let { currentSection = it }
                         }
                     )
-                    Section.PERSONAL -> PersonalScreen(state, viewModel::savePersonal, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.JOBS -> JobsScreen(state, viewModel::saveJob, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.PROJECTS -> ProjectsScreen(state, viewModel::saveProject, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.SKILLS -> SkillsScreen(state, viewModel::saveSkill, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.EDUCATION -> EducationScreen(state, viewModel::saveEducation, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.CERTIFICATIONS -> CertificationsScreen(state, viewModel::saveCertification, viewModel::clearSaveSuccess, viewModel::clearError)
-                    Section.SOFT_SKILLS -> SoftSkillsScreen(state, viewModel::saveSoftSkill, viewModel::clearSaveSuccess, viewModel::clearError)
+                    Section.PERSONAL -> PersonalScreen(
+                        state = state,
+                        selectedLangCode = selectedLangCode,
+                        onSelectLang = viewModel::selectLanguage,
+                        onSave = viewModel::savePersonal,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
+                    )
+                    Section.JOBS -> JobsScreen(
+                        state = state,
+                        selectedLangCode = selectedLangCode,
+                        onSelectLang = viewModel::selectLanguage,
+                        onSave = viewModel::saveJob,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
+                    )
+                    Section.PROJECTS -> ProjectsScreen(
+                        state, viewModel::saveProject, viewModel::clearSaveSuccess, viewModel::clearError
+                    )
+                    Section.SKILLS -> SkillsScreen(
+                        state, viewModel::saveSkill, viewModel::clearSaveSuccess, viewModel::clearError
+                    )
+                    Section.EDUCATION -> EducationScreen(
+                        state = state,
+                        selectedLangCode = selectedLangCode,
+                        onSelectLang = viewModel::selectLanguage,
+                        onSave = viewModel::saveEducation,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
+                    )
+                    Section.CERTIFICATIONS -> CertificationsScreen(
+                        state, viewModel::saveCertification, viewModel::clearSaveSuccess, viewModel::clearError
+                    )
+                    Section.SOFT_SKILLS -> SoftSkillsScreen(
+                        state = state,
+                        selectedLangCode = selectedLangCode,
+                        onSelectLang = viewModel::selectLanguage,
+                        onSave = viewModel::saveSoftSkill,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
+                    )
                     Section.SETTINGS -> SettingsScreen(
                         state = settingsState,
                         onSave = viewModel::saveSettings,

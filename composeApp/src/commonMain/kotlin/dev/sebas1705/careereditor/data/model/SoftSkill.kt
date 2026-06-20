@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SoftSkill(
     val id: String = "",
-    val icon: String = "",
-    val name_en: String = "",
-    val name_es: String = ""
+    // LocalizedString — { "en": "Adaptability", "es": "Adaptabilidad", [anyCode]: "..." }
+    val name: Map<String, String> = emptyMap(),
 )

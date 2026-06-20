@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Certification
-import dev.sebas1705.careereditor.data.model.LocalizedText
 import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
@@ -50,7 +49,7 @@ fun CertificationsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text(cert.name.es, style = MaterialTheme.typography.titleMedium)
+                            Text(cert.name, style = MaterialTheme.typography.titleMedium)
                             Text(cert.issuer, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                             Text(cert.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -71,18 +70,15 @@ fun CertificationEditScreen(
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var nameEnVal by remember { mutableStateOf(cert.name.en) }
-    var nameEsVal by remember { mutableStateOf(cert.name.es) }
-    var issuerVal by remember { mutableStateOf(cert.issuer) }
-    var dateVal by remember { mutableStateOf(cert.date) }
-    var descEnVal by remember { mutableStateOf(cert.desc.en) }
-    var descEsVal by remember { mutableStateOf(cert.desc.es) }
-    var urlVal by remember { mutableStateOf(cert.url) }
+    var name   by remember(cert) { mutableStateOf(cert.name) }
+    var issuer by remember(cert) { mutableStateOf(cert.issuer) }
+    var date   by remember(cert) { mutableStateOf(cert.date) }
+    var url    by remember(cert) { mutableStateOf(cert.url) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(cert.issuer, maxLines = 1) },
+                title = { Text(cert.issuer.ifBlank { cert.id }, maxLines = 1) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
@@ -94,29 +90,16 @@ fun CertificationEditScreen(
             state.error?.let { ErrorBanner(it, onClearError) }
 
             FieldGroup("Información del certificado") {
-                SectionField(label = "Nombre (EN)", value = nameEnVal, onValueChange = { nameEnVal = it }, required = true, singleLine = true)
-                SectionField(label = "Nombre (ES)", value = nameEsVal, onValueChange = { nameEsVal = it }, required = true, singleLine = true)
-                SectionField(label = "Emisor", value = issuerVal, onValueChange = { issuerVal = it }, required = true, singleLine = true)
-                SectionField(label = "Fecha", value = dateVal, onValueChange = { dateVal = it }, singleLine = true, supportingText = "Ej: Dec 2025")
-                SectionField(label = "URL del certificado", value = urlVal, onValueChange = { urlVal = it }, singleLine = true)
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Descripción") {
-                SectionField(label = "Descripción (EN)", value = descEnVal, onValueChange = { descEnVal = it })
-                SectionField(label = "Descripción (ES)", value = descEsVal, onValueChange = { descEsVal = it })
+                SectionField(label = "Nombre", value = name, onValueChange = { name = it }, required = true, singleLine = true)
+                SectionField(label = "Emisor", value = issuer, onValueChange = { issuer = it }, required = true, singleLine = true)
+                SectionField(label = "Fecha", value = date, onValueChange = { date = it }, singleLine = true, supportingText = "Ej: Dec 2025")
+                SectionField(label = "URL del certificado", value = url, onValueChange = { url = it }, singleLine = true)
             }
 
             SaveButton(
-                onClick = {
-                    onSave(cert.copy(
-                        name = LocalizedText(nameEnVal, nameEsVal),
-                        issuer = issuerVal, date = dateVal,
-                        desc = LocalizedText(descEnVal, descEsVal),
-                        url = urlVal
-                    ))
-                },
+                onClick = { onSave(cert.copy(name = name, issuer = issuer, date = date, url = url)) },
                 isLoading = state.isLoading,
-                enabled = nameEnVal.isNotBlank() && issuerVal.isNotBlank()
+                enabled = name.isNotBlank() && issuer.isNotBlank()
             )
         }
     }

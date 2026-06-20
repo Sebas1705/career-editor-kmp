@@ -5,9 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Certification(
     val id: String = "",
-    val name: LocalizedText = LocalizedText(),
+    val name: String = "",
     val issuer: String = "",
     val date: String = "",
-    val desc: LocalizedText = LocalizedText(),
     val url: String = ""
 )

@@ -6,19 +6,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Personal(
     val name: String = "",
-    @SerialName("greeting_en") val greetingEn: String = "",
-    @SerialName("greeting_es") val greetingEs: String = "",
-    @SerialName("role_en") val roleEn: String = "",
-    @SerialName("role_es") val roleEs: String = "",
-    @SerialName("tagline_en") val taglineEn: String = "",
-    @SerialName("tagline_es") val taglineEs: String = "",
-    @SerialName("bio_en") val bioEn: String = "",
-    @SerialName("bio_es") val bioEs: String = "",
     val email: String = "",
-    @SerialName("location_en") val locationEn: String = "",
-    @SerialName("location_es") val locationEs: String = "",
     @SerialName("cv_url") val cvUrl: String = "",
     val github: String = "",
     val linkedin: String = "",
-    val codewars: String = ""
+    val codewars: String = "",
+    // LocalizedString fields — { "en": "...", "es": "...", [anyCode]: "..." }
+    val greeting: Map<String, String> = emptyMap(),
+    val role: Map<String, String> = emptyMap(),
+    val tagline: Map<String, String> = emptyMap(),
+    val bio: Map<String, String> = emptyMap(),
+    val location: Map<String, String> = emptyMap(),
 )

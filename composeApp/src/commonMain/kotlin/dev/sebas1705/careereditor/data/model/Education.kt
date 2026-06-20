@@ -5,9 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Education(
     val id: String = "",
-    val degree: LocalizedText = LocalizedText(),
     val school: String = "",
-    val period: LocalizedText = LocalizedText(),
-    val detail: LocalizedText = LocalizedText(),
-    val icon: String = ""
+    val icon: String = "",
+    // LocalizedString fields — { "en": "...", "es": "...", [anyCode]: "..." }
+    val degree: Map<String, String> = emptyMap(),
+    val period: Map<String, String> = emptyMap(),
+    val detail: Map<String, String> = emptyMap(),
 )

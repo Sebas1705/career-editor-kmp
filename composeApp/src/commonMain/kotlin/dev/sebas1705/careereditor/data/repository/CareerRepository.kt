@@ -14,6 +14,7 @@ class CareerRepository(private val secureStorage: SecureStorage = SecureStorage(
         return CareerApiClient(baseUrl = baseUrl, token = token)
     }
 
+    suspend fun getLanguages() = buildClient().getLanguages()
     suspend fun getPersonal() = buildClient().getPersonal()
     suspend fun getJobs() = buildClient().getJobs()
     suspend fun getProjects() = buildClient().getProjects()
@@ -31,6 +32,7 @@ class CareerRepository(private val secureStorage: SecureStorage = SecureStorage(
     fun saveBaseUrl(url: String) = secureStorage.put(SecureKeys.API_BASE_URL, url.trim())
     fun getBaseUrl(): String = secureStorage.get(SecureKeys.API_BASE_URL) ?: DEFAULT_BASE_URL
 
+    suspend fun updateLanguages(languages: Languages) = buildClient().updateLanguages(languages)
     suspend fun updatePersonal(personal: Personal) = buildClient().updatePersonal(personal)
     suspend fun updateJob(job: Job) = buildClient().updateJob(job)
     suspend fun updateProject(project: Project) = buildClient().updateProject(project)

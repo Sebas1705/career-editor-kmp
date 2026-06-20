@@ -33,6 +33,7 @@ class CareerApiClient(
         }
     }
 
+    suspend fun getLanguages(): Languages = httpClient.get("$baseUrl/languages").body()
     suspend fun getPersonal(): Personal = httpClient.get("$baseUrl/personal").body()
     suspend fun getJobs(): List<Job> = httpClient.get("$baseUrl/jobs").body()
     suspend fun getProjects(): List<Project> = httpClient.get("$baseUrl/projects").body()
@@ -46,38 +47,43 @@ class CareerApiClient(
         httpClient.get(baseUrl).status.isSuccess()
     }.getOrDefault(false)
 
+    suspend fun updateLanguages(languages: Languages): Languages =
+        httpClient.put("$baseUrl/languages") {
+            contentType(ContentType.Application.Json); setBody(languages)
+        }.body()
+
     suspend fun updatePersonal(personal: Personal): Personal =
         httpClient.put("$baseUrl/personal") {
             contentType(ContentType.Application.Json); setBody(personal)
         }.body()
 
     suspend fun updateJob(job: Job): Job =
-        httpClient.put("$baseUrl/jobs/${job.id}") {
+        httpClient.patch("$baseUrl/jobs/${job.id}") {
             contentType(ContentType.Application.Json); setBody(job)
         }.body()
 
     suspend fun updateProject(project: Project): Project =
-        httpClient.put("$baseUrl/projects/${project.id}") {
+        httpClient.patch("$baseUrl/projects/${project.id}") {
             contentType(ContentType.Application.Json); setBody(project)
         }.body()
 
     suspend fun updateSkill(skill: Skill): Skill =
-        httpClient.put("$baseUrl/skills/${skill.id}") {
+        httpClient.patch("$baseUrl/skills/${skill.id}") {
             contentType(ContentType.Application.Json); setBody(skill)
         }.body()
 
     suspend fun updateEducation(education: Education): Education =
-        httpClient.put("$baseUrl/education/${education.id}") {
+        httpClient.patch("$baseUrl/education/${education.id}") {
             contentType(ContentType.Application.Json); setBody(education)
         }.body()
 
     suspend fun updateCertification(cert: Certification): Certification =
-        httpClient.put("$baseUrl/certifications/${cert.id}") {
+        httpClient.patch("$baseUrl/certifications/${cert.id}") {
             contentType(ContentType.Application.Json); setBody(cert)
         }.body()
 
     suspend fun updateSoftSkill(skill: SoftSkill): SoftSkill =
-        httpClient.put("$baseUrl/soft-skills/${skill.id}") {
+        httpClient.patch("$baseUrl/soft-skills/${skill.id}") {
             contentType(ContentType.Application.Json); setBody(skill)
         }.body()
 }

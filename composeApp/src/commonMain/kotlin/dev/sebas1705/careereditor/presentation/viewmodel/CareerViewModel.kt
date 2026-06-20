@@ -19,6 +19,7 @@ data class CareerUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val saveSuccess: Boolean = false,
+    val languages: Languages = Languages(),
     val personal: Personal = Personal(),
     val jobs: List<Job> = emptyList(),
     val projects: List<Project> = emptyList(),
@@ -53,6 +54,10 @@ class CareerViewModel(
 
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
+
+    /** The language code currently selected for viewing/editing. */
+    private val _selectedLangCode = MutableStateFlow("en")
+    val selectedLangCode: StateFlow<String> = _selectedLangCode.asStateFlow()
 
     init {
         checkAuthAndLoad()
@@ -97,7 +102,6 @@ class CareerViewModel(
     }
 
     fun loginAnonymous() {
-        // Skip token — the API is public for reads
         repository.clearToken()
         _authState.value = AuthState.Authenticated
         loadAll()
@@ -111,20 +115,27 @@ class CareerViewModel(
 
     fun clearLoginError() { _loginError.value = null }
 
+    // ── Language selection ────────────────────────────────────────────────────
+
+    fun selectLanguage(code: String) { _selectedLangCode.value = code }
+
     // ── Data ──────────────────────────────────────────────────────────────────
 
     fun loadAll() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
+                val languages = runCatching { repository.getLanguages() }.getOrDefault(Languages())
+                _selectedLangCode.value = languages.default.ifBlank { "en" }
                 _uiState.value = CareerUiState(
-                    personal = repository.getPersonal(),
-                    jobs = repository.getJobs(),
-                    projects = repository.getProjects(),
-                    skills = repository.getSkills(),
-                    education = repository.getEducation(),
+                    languages      = languages,
+                    personal       = repository.getPersonal(),
+                    jobs           = repository.getJobs(),
+                    projects       = repository.getProjects(),
+                    skills         = repository.getSkills(),
+                    education      = repository.getEducation(),
                     certifications = repository.getCertifications(),
-                    softSkills = repository.getSoftSkills()
+                    softSkills     = repository.getSoftSkills()
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error de red")
@@ -142,11 +153,17 @@ class CareerViewModel(
                 val result = request()
                 _uiState.value = onSuccess(result).copy(saveSuccess = true)
             } catch (e: Exception) {
-                // Optimistic update already applied by caller fallback
                 _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
             }
         }
     }
+
+    fun saveLanguages(languages: Languages) = saveItem(
+        request = { repository.updateLanguages(languages) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, languages = updated)
+        }
+    )
 
     fun savePersonal(personal: Personal) = saveItem(
         request = { repository.updatePersonal(personal) },

@@ -13,13 +13,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Job
-import dev.sebas1705.careereditor.data.model.LocalizedText
+import dev.sebas1705.careereditor.data.model.resolve
 import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
 @Composable
 fun JobsScreen(
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (Job) -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
@@ -30,39 +32,44 @@ fun JobsScreen(
         JobEditScreen(
             job = selected!!,
             state = state,
+            selectedLangCode = selectedLangCode,
+            onSelectLang = onSelectLang,
             onSave = { onSave(it); selected = null },
             onBack = { selected = null },
             onClearSuccess = onClearSuccess,
             onClearError = onClearError
         )
     } else {
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            SectionHeader("Experiencia Laboral", "${state.jobs.size} posiciones")
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize()) {
+            LanguageTabs(state.languages.supported, selectedLangCode, onSelectLang)
+            Column(Modifier.fillMaxSize().padding(16.dp)) {
+                SectionHeader("Experiencia Laboral", "${state.jobs.size} posiciones")
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.jobs) { job ->
-                    Card(
-                        onClick = { selected = job },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(job.role.es, style = MaterialTheme.typography.titleMedium)
-                                    Text(job.company, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(state.jobs) { job ->
+                        Card(
+                            onClick = { selected = job },
+                            shape = MaterialTheme.shapes.medium,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(job.role.resolve(selectedLangCode), style = MaterialTheme.typography.titleMedium)
+                                        Text(job.company, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text(job.type.resolve(selectedLangCode), style = MaterialTheme.typography.labelSmall) }
+                                    )
                                 }
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text(job.type.es, style = MaterialTheme.typography.labelSmall) }
-                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(job.period.resolve(selectedLangCode), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Spacer(Modifier.height(4.dp))
-                            Text(job.period.es, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -76,68 +83,88 @@ fun JobsScreen(
 fun JobEditScreen(
     job: Job,
     state: CareerUiState,
+    selectedLangCode: String,
+    onSelectLang: (String) -> Unit,
     onSave: (Job) -> Unit,
     onBack: () -> Unit,
     onClearSuccess: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var roleEnVal by remember { mutableStateOf(job.role.en) }
-    var roleEsVal by remember { mutableStateOf(job.role.es) }
-    var companyVal by remember { mutableStateOf(job.company) }
-    var companyUrlVal by remember { mutableStateOf(job.companyUrl) }
-    var periodEnVal by remember { mutableStateOf(job.period.en) }
-    var periodEsVal by remember { mutableStateOf(job.period.es) }
-    var typeEnVal by remember { mutableStateOf(job.type.en) }
-    var typeEsVal by remember { mutableStateOf(job.type.es) }
-    var descEnVal by remember { mutableStateOf(job.desc.en) }
-    var descEsVal by remember { mutableStateOf(job.desc.es) }
+    var company    by remember(job) { mutableStateOf(job.company) }
+    var companyUrl by remember(job) { mutableStateOf(job.companyUrl) }
+    var startDate  by remember(job) { mutableStateOf(job.startDate) }
+
+    var role   by remember(job) { mutableStateOf(job.role) }
+    var type   by remember(job) { mutableStateOf(job.type) }
+    var period by remember(job) { mutableStateOf(job.period) }
+    var desc   by remember(job) { mutableStateOf(job.desc) }
+
+    val lang = selectedLangCode
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(job.company, maxLines = 1) },
+                title = { Text(company.ifBlank { job.id }, maxLines = 1) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)
-        ) {
-            if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
-            state.error?.let { ErrorBanner(it, onClearError) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            LanguageTabs(state.languages.supported, lang, onSelectLang)
 
-            FieldGroup("Empresa") {
-                SectionField(label = "Empresa", value = companyVal, onValueChange = { companyVal = it }, required = true, singleLine = true)
-                SectionField(label = "URL empresa", value = companyUrlVal, onValueChange = { companyUrlVal = it }, singleLine = true)
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Rol y periodo") {
-                SectionField(label = "Rol (EN)", value = roleEnVal, onValueChange = { roleEnVal = it }, required = true, singleLine = true)
-                SectionField(label = "Rol (ES)", value = roleEsVal, onValueChange = { roleEsVal = it }, required = true, singleLine = true)
-                SectionField(label = "Periodo (EN)", value = periodEnVal, onValueChange = { periodEnVal = it }, singleLine = true)
-                SectionField(label = "Periodo (ES)", value = periodEsVal, onValueChange = { periodEsVal = it }, singleLine = true)
-                SectionField(label = "Modalidad (EN)", value = typeEnVal, onValueChange = { typeEnVal = it }, singleLine = true, supportingText = "Ej: Hybrid, Remote, On-site")
-                SectionField(label = "Modalidad (ES)", value = typeEsVal, onValueChange = { typeEsVal = it }, singleLine = true)
-            }
-            Spacer(Modifier.height(8.dp))
-            FieldGroup("Descripción") {
-                SectionField(label = "Descripción (EN)", value = descEnVal, onValueChange = { descEnVal = it })
-                SectionField(label = "Descripción (ES)", value = descEsVal, onValueChange = { descEsVal = it })
-            }
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
+            ) {
+                if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
+                state.error?.let { ErrorBanner(it, onClearError) }
 
-            SaveButton(
-                onClick = {
-                    onSave(job.copy(
-                        role = LocalizedText(roleEnVal, roleEsVal),
-                        company = companyVal, companyUrl = companyUrlVal,
-                        period = LocalizedText(periodEnVal, periodEsVal),
-                        type = LocalizedText(typeEnVal, typeEsVal),
-                        desc = LocalizedText(descEnVal, descEsVal)
-                    ))
-                },
-                isLoading = state.isLoading,
-                enabled = companyVal.isNotBlank() && roleEsVal.isNotBlank()
-            )
+                FieldGroup("Empresa (no localizable)") {
+                    SectionField("Empresa", company, { company = it }, required = true, singleLine = true)
+                    SectionField("URL empresa", companyUrl, { companyUrl = it }, singleLine = true)
+                    SectionField("Fecha inicio (YYYY-MM)", startDate, { startDate = it }, singleLine = true)
+                }
+
+                FieldGroup("Rol, periodo y tipo [$lang]") {
+                    SectionField(
+                        label = "Rol",
+                        value = role[lang] ?: "",
+                        onValueChange = { role = role + (lang to it) },
+                        required = true, singleLine = true
+                    )
+                    SectionField(
+                        label = "Periodo",
+                        value = period[lang] ?: "",
+                        onValueChange = { period = period + (lang to it) },
+                        singleLine = true
+                    )
+                    SectionField(
+                        label = "Modalidad",
+                        value = type[lang] ?: "",
+                        onValueChange = { type = type + (lang to it) },
+                        singleLine = true,
+                        supportingText = "Ej: Hybrid, Remote, On-site"
+                    )
+                }
+
+                FieldGroup("Descripción [$lang]") {
+                    SectionField(
+                        label = "Descripción",
+                        value = desc[lang] ?: "",
+                        onValueChange = { desc = desc + (lang to it) }
+                    )
+                }
+
+                SaveButton(
+                    onClick = {
+                        onSave(job.copy(
+                            company = company, companyUrl = companyUrl, startDate = startDate,
+                            role = role, type = type, period = period, desc = desc
+                        ))
+                    },
+                    isLoading = state.isLoading,
+                    enabled = company.isNotBlank()
+                )
+            }
         }
     }
 }
