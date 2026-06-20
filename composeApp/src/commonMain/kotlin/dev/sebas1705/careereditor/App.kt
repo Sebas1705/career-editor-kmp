@@ -13,11 +13,11 @@ import dev.sebas1705.careereditor.presentation.viewmodel.CareerViewModel
 
 private enum class Section(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     PERSONAL("Personal", Icons.Default.Person),
-    JOBS("Trabajos", Icons.Default.Work),
-    PROJECTS("Proyectos", Icons.Default.Code),
+    JOBS("Trabajos", Icons.Default.Settings),
+    PROJECTS("Proyectos", Icons.Default.Edit),
     SKILLS("Skills", Icons.Default.Star),
-    EDUCATION("Educación", Icons.Default.School),
-    CERTIFICATIONS("Certs", Icons.Default.CardMembership),
+    EDUCATION("Educación", Icons.Default.Home),
+    CERTIFICATIONS("Certs", Icons.Default.Add),
     SOFT_SKILLS("Soft Skills", Icons.Default.Favorite)
 }
 
