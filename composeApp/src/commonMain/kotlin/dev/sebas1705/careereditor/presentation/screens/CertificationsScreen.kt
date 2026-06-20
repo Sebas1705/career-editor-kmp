@@ -1,6 +1,5 @@
 package dev.sebas1705.careereditor.presentation.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,33 +17,42 @@ import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
 @Composable
-fun CertificationsScreen(state: CareerUiState, onSave: (Certification) -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
-    var selectedCert by remember { mutableStateOf<Certification?>(null) }
+fun CertificationsScreen(
+    state: CareerUiState,
+    onSave: (Certification) -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
+    var selected by remember { mutableStateOf<Certification?>(null) }
 
-    if (selectedCert != null) {
+    if (selected != null) {
         CertificationEditScreen(
-            cert = selectedCert!!,
+            cert = selected!!,
             state = state,
-            onSave = { onSave(it); selectedCert = null },
-            onBack = { selectedCert = null },
+            onSave = { onSave(it); selected = null },
+            onBack = { selected = null },
             onClearSuccess = onClearSuccess,
             onClearError = onClearError
         )
     } else {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Certificaciones", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            SectionHeader("Certificaciones", "${state.certifications.size} certificados")
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
-            LazyColumn {
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.certifications) { cert ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { selectedCert = cert }
+                        onClick = { selected = cert },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Text(cert.name.es, style = MaterialTheme.typography.titleMedium)
-                            Text(cert.issuer, style = MaterialTheme.typography.bodyMedium)
-                            Text(cert.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                            Text(cert.issuer, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            Text(cert.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -55,19 +63,26 @@ fun CertificationsScreen(state: CareerUiState, onSave: (Certification) -> Unit, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CertificationEditScreen(cert: Certification, state: CareerUiState, onSave: (Certification) -> Unit, onBack: () -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
-    var nameEn by remember { mutableStateOf(cert.name.en) }
-    var nameEs by remember { mutableStateOf(cert.name.es) }
-    var issuer by remember { mutableStateOf(cert.issuer) }
-    var date by remember { mutableStateOf(cert.date) }
-    var descEn by remember { mutableStateOf(cert.desc.en) }
-    var descEs by remember { mutableStateOf(cert.desc.es) }
-    var url by remember { mutableStateOf(cert.url) }
+fun CertificationEditScreen(
+    cert: Certification,
+    state: CareerUiState,
+    onSave: (Certification) -> Unit,
+    onBack: () -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
+    var nameEnVal by remember { mutableStateOf(cert.name.en) }
+    var nameEsVal by remember { mutableStateOf(cert.name.es) }
+    var issuerVal by remember { mutableStateOf(cert.issuer) }
+    var dateVal by remember { mutableStateOf(cert.date) }
+    var descEnVal by remember { mutableStateOf(cert.desc.en) }
+    var descEsVal by remember { mutableStateOf(cert.desc.es) }
+    var urlVal by remember { mutableStateOf(cert.url) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(cert.issuer) },
+                title = { Text(cert.issuer, maxLines = 1) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
@@ -78,24 +93,30 @@ fun CertificationEditScreen(cert: Certification, state: CareerUiState, onSave: (
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
 
-            SectionField("Nombre (EN)", nameEn) { nameEn = it }
-            SectionField("Nombre (ES)", nameEs) { nameEs = it }
-            SectionField("Emisor", issuer) { issuer = it }
-            SectionField("Fecha", date) { date = it }
-            SectionField("Descripción (EN)", descEn) { descEn = it }
-            SectionField("Descripción (ES)", descEs) { descEs = it }
-            SectionField("URL del certificado", url) { url = it }
+            FieldGroup("Información del certificado") {
+                SectionField(label = "Nombre (EN)", value = nameEnVal, onValueChange = { nameEnVal = it }, required = true, singleLine = true)
+                SectionField(label = "Nombre (ES)", value = nameEsVal, onValueChange = { nameEsVal = it }, required = true, singleLine = true)
+                SectionField(label = "Emisor", value = issuerVal, onValueChange = { issuerVal = it }, required = true, singleLine = true)
+                SectionField(label = "Fecha", value = dateVal, onValueChange = { dateVal = it }, singleLine = true, supportingText = "Ej: Dec 2025")
+                SectionField(label = "URL del certificado", value = urlVal, onValueChange = { urlVal = it }, singleLine = true)
+            }
+            Spacer(Modifier.height(8.dp))
+            FieldGroup("Descripción") {
+                SectionField(label = "Descripción (EN)", value = descEnVal, onValueChange = { descEnVal = it })
+                SectionField(label = "Descripción (ES)", value = descEsVal, onValueChange = { descEsVal = it })
+            }
 
             SaveButton(
                 onClick = {
                     onSave(cert.copy(
-                        name = LocalizedText(nameEn, nameEs),
-                        issuer = issuer, date = date,
-                        desc = LocalizedText(descEn, descEs),
-                        url = url
+                        name = LocalizedText(nameEnVal, nameEsVal),
+                        issuer = issuerVal, date = dateVal,
+                        desc = LocalizedText(descEnVal, descEsVal),
+                        url = urlVal
                     ))
                 },
-                isLoading = state.isLoading
+                isLoading = state.isLoading,
+                enabled = nameEnVal.isNotBlank() && issuerVal.isNotBlank()
             )
         }
     }

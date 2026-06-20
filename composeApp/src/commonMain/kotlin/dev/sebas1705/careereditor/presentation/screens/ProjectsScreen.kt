@@ -1,6 +1,5 @@
 package dev.sebas1705.careereditor.presentation.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,10 +14,23 @@ import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.LocalizedText
 import dev.sebas1705.careereditor.data.model.Project
 import dev.sebas1705.careereditor.presentation.components.*
+import androidx.compose.foundation.layout.FlowRowScope
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
+private val contextColors = mapOf(
+    "work" to "💼",
+    "academic" to "🎓",
+    "personal" to "⭐"
+)
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProjectsScreen(state: CareerUiState, onSave: (Project) -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
+fun ProjectsScreen(
+    state: CareerUiState,
+    onSave: (Project) -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
     var selectedProject by remember { mutableStateOf<Project?>(null) }
 
     if (selectedProject != null) {
@@ -32,19 +44,34 @@ fun ProjectsScreen(state: CareerUiState, onSave: (Project) -> Unit, onClearSucce
         )
     } else {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Proyectos", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            SectionHeader("Proyectos", "${state.projects.size} proyectos")
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
-            LazyColumn {
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.projects) { project ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { selectedProject = project }
+                        onClick = { selectedProject = project },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text(project.name, style = MaterialTheme.typography.titleMedium)
-                            Text(project.context, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                            Text(project.desc.es, style = MaterialTheme.typography.bodyMedium)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(contextColors[project.context] ?: "📁", style = MaterialTheme.typography.titleMedium)
+                                Column(Modifier.weight(1f)) {
+                                    Text(project.name, style = MaterialTheme.typography.titleMedium)
+                                    Text(project.desc.es, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                                }
+                            }
+                            if (project.tags.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                FlowRow {
+                                    project.tags.take(5).forEach { tag -> TagChip(tag) }
+                                    if (project.tags.size > 5) TagChip("+${project.tags.size - 5}")
+                                }
+                            }
                         }
                     }
                 }
@@ -55,7 +82,14 @@ fun ProjectsScreen(state: CareerUiState, onSave: (Project) -> Unit, onClearSucce
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectEditScreen(project: Project, state: CareerUiState, onSave: (Project) -> Unit, onBack: () -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
+fun ProjectEditScreen(
+    project: Project,
+    state: CareerUiState,
+    onSave: (Project) -> Unit,
+    onBack: () -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
     var name by remember { mutableStateOf(project.name) }
     var context by remember { mutableStateOf(project.context) }
     var descEn by remember { mutableStateOf(project.desc.en) }
@@ -66,15 +100,13 @@ fun ProjectEditScreen(project: Project, state: CareerUiState, onSave: (Project) 
     var github by remember { mutableStateOf(project.github ?: "") }
     var demo by remember { mutableStateOf(project.demo ?: "") }
 
+    val isValid = name.isNotBlank()
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(project.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
-                    }
-                }
+                title = { Text(project.name, maxLines = 1) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } }
             )
         }
     ) { padding ->
@@ -84,15 +116,23 @@ fun ProjectEditScreen(project: Project, state: CareerUiState, onSave: (Project) 
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
 
-            SectionField("Nombre", name) { name = it }
-            SectionField("Contexto (work/academic/personal)", context) { context = it }
-            SectionField("Descripción corta (EN)", descEn) { descEn = it }
-            SectionField("Descripción corta (ES)", descEs) { descEs = it }
-            SectionField("Descripción larga (EN)", longDescEn) { longDescEn = it }
-            SectionField("Descripción larga (ES)", longDescEs) { longDescEs = it }
-            SectionField("Tags (separados por coma)", tags) { tags = it }
-            SectionField("GitHub URL", github) { github = it }
-            SectionField("Demo URL", demo) { demo = it }
+            FieldGroup("General") {
+                SectionField("Nombre del proyecto", name, { name = it }, required = true, singleLine = true)
+                SectionField("Contexto (work / academic / personal)", context, { context = it }, singleLine = true)
+            }
+            Spacer(Modifier.height(8.dp))
+            FieldGroup("Descripciones") {
+                SectionField("Descripción corta (EN)", descEn, { descEn = it })
+                SectionField("Descripción corta (ES)", descEs, { descEs = it })
+                SectionField("Descripción larga (EN)", longDescEn, { longDescEn = it })
+                SectionField("Descripción larga (ES)", longDescEs, { longDescEs = it })
+            }
+            Spacer(Modifier.height(8.dp))
+            FieldGroup("Tags y links") {
+                SectionField("Tags (separados por coma)", tags, { tags = it }, supportingText = "Ej: Kotlin, Jetpack Compose, Firebase")
+                SectionField("GitHub URL", github, { github = it }, singleLine = true)
+                SectionField("Demo URL", demo, { demo = it }, singleLine = true)
+            }
 
             SaveButton(
                 onClick = {
@@ -105,8 +145,15 @@ fun ProjectEditScreen(project: Project, state: CareerUiState, onSave: (Project) 
                         demo = demo.ifBlank { null }
                     ))
                 },
-                isLoading = state.isLoading
+                isLoading = state.isLoading,
+                enabled = isValid
             )
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRow(content: @Composable FlowRowScope.() -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(content = content)
 }

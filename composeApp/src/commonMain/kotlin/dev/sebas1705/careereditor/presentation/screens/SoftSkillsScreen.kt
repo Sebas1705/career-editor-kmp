@@ -1,6 +1,5 @@
 package dev.sebas1705.careereditor.presentation.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,35 +17,52 @@ import dev.sebas1705.careereditor.presentation.components.*
 import dev.sebas1705.careereditor.presentation.viewmodel.CareerUiState
 
 @Composable
-fun SoftSkillsScreen(state: CareerUiState, onSave: (SoftSkill) -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
-    var selectedSkill by remember { mutableStateOf<SoftSkill?>(null) }
+fun SoftSkillsScreen(
+    state: CareerUiState,
+    onSave: (SoftSkill) -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
+    var selected by remember { mutableStateOf<SoftSkill?>(null) }
 
-    if (selectedSkill != null) {
+    if (selected != null) {
         SoftSkillEditScreen(
-            skill = selectedSkill!!,
+            skill = selected!!,
             state = state,
-            onSave = { onSave(it); selectedSkill = null },
-            onBack = { selectedSkill = null },
+            onSave = { onSave(it); selected = null },
+            onBack = { selected = null },
             onClearSuccess = onClearSuccess,
             onClearError = onClearError
         )
     } else {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Habilidades Blandas", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            SectionHeader("Habilidades Blandas", "${state.softSkills.size} habilidades")
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
-            LazyColumn {
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.softSkills) { skill ->
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { selectedSkill = skill }
+                        onClick = { selected = skill },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(skill.icon, style = MaterialTheme.typography.headlineMedium)
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(skill.icon, style = MaterialTheme.typography.headlineSmall)
+                                }
+                            }
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(skill.name_es, style = MaterialTheme.typography.titleMedium)
-                                Text(skill.name_en, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                Text(skill.name_en, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -58,10 +74,17 @@ fun SoftSkillsScreen(state: CareerUiState, onSave: (SoftSkill) -> Unit, onClearS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SoftSkillEditScreen(skill: SoftSkill, state: CareerUiState, onSave: (SoftSkill) -> Unit, onBack: () -> Unit, onClearSuccess: () -> Unit, onClearError: () -> Unit) {
-    var icon by remember { mutableStateOf(skill.icon) }
-    var nameEn by remember { mutableStateOf(skill.name_en) }
-    var nameEs by remember { mutableStateOf(skill.name_es) }
+fun SoftSkillEditScreen(
+    skill: SoftSkill,
+    state: CareerUiState,
+    onSave: (SoftSkill) -> Unit,
+    onBack: () -> Unit,
+    onClearSuccess: () -> Unit,
+    onClearError: () -> Unit
+) {
+    var iconVal by remember { mutableStateOf(skill.icon) }
+    var nameEnVal by remember { mutableStateOf(skill.name_en) }
+    var nameEsVal by remember { mutableStateOf(skill.name_es) }
 
     Scaffold(
         topBar = {
@@ -77,13 +100,16 @@ fun SoftSkillEditScreen(skill: SoftSkill, state: CareerUiState, onSave: (SoftSki
             if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
             state.error?.let { ErrorBanner(it, onClearError) }
 
-            SectionField("Icono (emoji)", icon) { icon = it }
-            SectionField("Nombre (EN)", nameEn) { nameEn = it }
-            SectionField("Nombre (ES)", nameEs) { nameEs = it }
+            FieldGroup("Editar soft skill") {
+                SectionField(label = "Icono (emoji)", value = iconVal, onValueChange = { iconVal = it }, singleLine = true)
+                SectionField(label = "Nombre (EN)", value = nameEnVal, onValueChange = { nameEnVal = it }, required = true, singleLine = true)
+                SectionField(label = "Nombre (ES)", value = nameEsVal, onValueChange = { nameEsVal = it }, required = true, singleLine = true)
+            }
 
             SaveButton(
-                onClick = { onSave(skill.copy(icon = icon, name_en = nameEn, name_es = nameEs)) },
-                isLoading = state.isLoading
+                onClick = { onSave(skill.copy(icon = iconVal, name_en = nameEnVal, name_es = nameEsVal)) },
+                isLoading = state.isLoading,
+                enabled = nameEnVal.isNotBlank() && nameEsVal.isNotBlank()
             )
         }
     }

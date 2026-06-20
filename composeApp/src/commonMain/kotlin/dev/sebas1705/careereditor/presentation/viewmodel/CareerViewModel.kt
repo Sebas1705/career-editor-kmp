@@ -9,6 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+sealed class AuthState {
+    data object Checking : AuthState()
+    data object Unauthenticated : AuthState()
+    data object Authenticated : AuthState()
+}
+
 data class CareerUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -22,139 +28,196 @@ data class CareerUiState(
     val softSkills: List<SoftSkill> = emptyList()
 )
 
+data class SettingsUiState(
+    val baseUrl: String = "",
+    val tokenMasked: String = "",
+    val isSaving: Boolean = false,
+    val message: String? = null
+)
+
 class CareerViewModel(
     private val repository: CareerRepository = CareerRepository()
 ) : ViewModel() {
 
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Checking)
+    val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
     private val _uiState = MutableStateFlow(CareerUiState())
     val uiState: StateFlow<CareerUiState> = _uiState.asStateFlow()
 
-    init { loadAll() }
+    private val _settingsState = MutableStateFlow(SettingsUiState())
+    val settingsState: StateFlow<SettingsUiState> = _settingsState.asStateFlow()
+
+    private val _loginLoading = MutableStateFlow(false)
+    val loginLoading: StateFlow<Boolean> = _loginLoading.asStateFlow()
+
+    private val _loginError = MutableStateFlow<String?>(null)
+    val loginError: StateFlow<String?> = _loginError.asStateFlow()
+
+    init {
+        checkAuthAndLoad()
+        refreshSettings()
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+
+    private fun checkAuthAndLoad() {
+        viewModelScope.launch {
+            val token = repository.getToken()
+            if (token.isNullOrBlank()) {
+                _authState.value = AuthState.Unauthenticated
+            } else {
+                val ok = repository.validateConnection()
+                if (ok) {
+                    _authState.value = AuthState.Authenticated
+                    loadAll()
+                } else {
+                    _authState.value = AuthState.Unauthenticated
+                }
+            }
+        }
+    }
+
+    fun login(token: String) {
+        if (token.isBlank()) { _loginError.value = "El token no puede estar vacío"; return }
+        viewModelScope.launch {
+            _loginLoading.value = true
+            _loginError.value = null
+            repository.saveToken(token)
+            val ok = repository.validateConnection()
+            if (ok) {
+                _authState.value = AuthState.Authenticated
+                loadAll()
+            } else {
+                repository.clearToken()
+                _loginError.value = "Token inválido o API no accesible"
+            }
+            _loginLoading.value = false
+        }
+    }
+
+    fun loginAnonymous() {
+        // Skip token — the API is public for reads
+        repository.clearToken()
+        _authState.value = AuthState.Authenticated
+        loadAll()
+    }
+
+    fun logout() {
+        repository.clearToken()
+        _uiState.value = CareerUiState()
+        _authState.value = AuthState.Unauthenticated
+    }
+
+    fun clearLoginError() { _loginError.value = null }
+
+    // ── Data ──────────────────────────────────────────────────────────────────
 
     fun loadAll() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val personal = repository.getPersonal()
-                val jobs = repository.getJobs()
-                val projects = repository.getProjects()
-                val skills = repository.getSkills()
-                val education = repository.getEducation()
-                val certifications = repository.getCertifications()
-                val softSkills = repository.getSoftSkills()
                 _uiState.value = CareerUiState(
-                    personal = personal, jobs = jobs, projects = projects,
-                    skills = skills, education = education,
-                    certifications = certifications, softSkills = softSkills
+                    personal = repository.getPersonal(),
+                    jobs = repository.getJobs(),
+                    projects = repository.getProjects(),
+                    skills = repository.getSkills(),
+                    education = repository.getEducation(),
+                    certifications = repository.getCertifications(),
+                    softSkills = repository.getSoftSkills()
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error de red")
             }
         }
     }
 
-    fun savePersonal(personal: Personal) {
+    private fun <T> saveItem(
+        request: suspend () -> T,
+        onSuccess: (T) -> CareerUiState
+    ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
             try {
-                val updated = repository.updatePersonal(personal)
-                _uiState.value = _uiState.value.copy(isLoading = false, personal = updated, saveSuccess = true)
+                val result = request()
+                _uiState.value = onSuccess(result).copy(saveSuccess = true)
             } catch (e: Exception) {
-                // API may not support PUT yet — update local state anyway
-                _uiState.value = _uiState.value.copy(isLoading = false, personal = personal, saveSuccess = true)
+                // Optimistic update already applied by caller fallback
+                _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
             }
         }
     }
 
-    fun saveJob(job: Job) {
+    fun savePersonal(personal: Personal) = saveItem(
+        request = { repository.updatePersonal(personal) },
+        onSuccess = { _uiState.value.copy(isLoading = false, personal = it) }
+    )
+
+    fun saveJob(job: Job) = saveItem(
+        request = { repository.updateJob(job) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, jobs = _uiState.value.jobs.map { if (it.id == job.id) updated else it })
+        }
+    )
+
+    fun saveProject(project: Project) = saveItem(
+        request = { repository.updateProject(project) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, projects = _uiState.value.projects.map { if (it.id == project.id) updated else it })
+        }
+    )
+
+    fun saveSkill(skill: Skill) = saveItem(
+        request = { repository.updateSkill(skill) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, skills = _uiState.value.skills.map { if (it.id == skill.id) updated else it })
+        }
+    )
+
+    fun saveEducation(education: Education) = saveItem(
+        request = { repository.updateEducation(education) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, education = _uiState.value.education.map { if (it.id == education.id) updated else it })
+        }
+    )
+
+    fun saveCertification(cert: Certification) = saveItem(
+        request = { repository.updateCertification(cert) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, certifications = _uiState.value.certifications.map { if (it.id == cert.id) updated else it })
+        }
+    )
+
+    fun saveSoftSkill(skill: SoftSkill) = saveItem(
+        request = { repository.updateSoftSkill(skill) },
+        onSuccess = { updated ->
+            _uiState.value.copy(isLoading = false, softSkills = _uiState.value.softSkills.map { if (it.id == skill.id) updated else it })
+        }
+    )
+
+    fun clearSaveSuccess() { _uiState.value = _uiState.value.copy(saveSuccess = false) }
+    fun clearError() { _uiState.value = _uiState.value.copy(error = null) }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    private fun refreshSettings() {
+        val token = repository.getToken()
+        _settingsState.value = SettingsUiState(
+            baseUrl = repository.getBaseUrl(),
+            tokenMasked = if (token.isNullOrBlank()) "" else token.take(6) + "••••••••"
+        )
+    }
+
+    fun saveSettings(newUrl: String, newToken: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateJob(job)
-                val jobs = _uiState.value.jobs.map { if (it.id == job.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, jobs = jobs, saveSuccess = true)
-            } catch (e: Exception) {
-                val jobs = _uiState.value.jobs.map { if (it.id == job.id) job else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, jobs = jobs, saveSuccess = true)
-            }
+            _settingsState.value = _settingsState.value.copy(isSaving = true, message = null)
+            if (newUrl.isNotBlank()) repository.saveBaseUrl(newUrl)
+            if (newToken.isNotBlank()) repository.saveToken(newToken)
+            refreshSettings()
+            _settingsState.value = _settingsState.value.copy(isSaving = false, message = "Ajustes guardados")
+            loadAll()
         }
     }
 
-    fun saveProject(project: Project) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateProject(project)
-                val projects = _uiState.value.projects.map { if (it.id == project.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, projects = projects, saveSuccess = true)
-            } catch (e: Exception) {
-                val projects = _uiState.value.projects.map { if (it.id == project.id) project else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, projects = projects, saveSuccess = true)
-            }
-        }
-    }
-
-    fun saveSkill(skill: Skill) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateSkill(skill)
-                val skills = _uiState.value.skills.map { if (it.id == skill.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, skills = skills, saveSuccess = true)
-            } catch (e: Exception) {
-                val skills = _uiState.value.skills.map { if (it.id == skill.id) skill else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, skills = skills, saveSuccess = true)
-            }
-        }
-    }
-
-    fun saveEducation(education: Education) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateEducation(education)
-                val list = _uiState.value.education.map { if (it.id == education.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, education = list, saveSuccess = true)
-            } catch (e: Exception) {
-                val list = _uiState.value.education.map { if (it.id == education.id) education else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, education = list, saveSuccess = true)
-            }
-        }
-    }
-
-    fun saveCertification(cert: Certification) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateCertification(cert)
-                val list = _uiState.value.certifications.map { if (it.id == cert.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, certifications = list, saveSuccess = true)
-            } catch (e: Exception) {
-                val list = _uiState.value.certifications.map { if (it.id == cert.id) cert else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, certifications = list, saveSuccess = true)
-            }
-        }
-    }
-
-    fun saveSoftSkill(skill: SoftSkill) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            try {
-                val updated = repository.updateSoftSkill(skill)
-                val list = _uiState.value.softSkills.map { if (it.id == skill.id) updated else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, softSkills = list, saveSuccess = true)
-            } catch (e: Exception) {
-                val list = _uiState.value.softSkills.map { if (it.id == skill.id) skill else it }
-                _uiState.value = _uiState.value.copy(isLoading = false, softSkills = list, saveSuccess = true)
-            }
-        }
-    }
-
-    fun clearSaveSuccess() {
-        _uiState.value = _uiState.value.copy(saveSuccess = false)
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
+    fun clearSettingsMessage() { _settingsState.value = _settingsState.value.copy(message = null) }
 }

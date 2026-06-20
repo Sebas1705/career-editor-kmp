@@ -1,82 +1,139 @@
 package dev.sebas1705.careereditor.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SectionField(label: String, value: String, onValueChange: (String) -> Unit) {
+fun SectionField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    singleLine: Boolean = false,
+    required: Boolean = false,
+    supportingText: String? = null
+) {
+    val isError = required && value.isBlank()
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        label = { Text(if (required) "$label *" else label) },
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        singleLine = false,
-        maxLines = 4
+        singleLine = singleLine,
+        maxLines = if (singleLine) 1 else 5,
+        isError = isError,
+        supportingText = when {
+            isError -> ({ Text("Campo obligatorio", color = MaterialTheme.colorScheme.error) })
+            supportingText != null -> ({ Text(supportingText, style = MaterialTheme.typography.labelSmall) })
+            else -> null
+        },
+        shape = MaterialTheme.shapes.medium,
+        keyboardOptions = KeyboardOptions(imeAction = if (singleLine) ImeAction.Next else ImeAction.Default)
     )
 }
 
 @Composable
-fun SaveButton(onClick: () -> Unit, isLoading: Boolean = false) {
+fun SaveButton(onClick: () -> Unit, isLoading: Boolean = false, enabled: Boolean = true) {
     Button(
         onClick = onClick,
-        enabled = !isLoading,
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        enabled = !isLoading && enabled,
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(48.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
             Spacer(Modifier.width(8.dp))
+            Text("Guardando...")
+        } else {
+            Text("Guardar cambios")
         }
-        Text("Guardar cambios")
     }
 }
 
 @Composable
 fun LoadingScreen() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(16.dp))
+            Text("Cargando datos...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
 @Composable
 fun ErrorBanner(message: String, onDismiss: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        modifier = Modifier.fillMaxWidth().padding(8.dp)
-    ) {
-        Row(
-            Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+    AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+        Surface(
+            color = MaterialTheme.colorScheme.errorContainer,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         ) {
-            Text(
-                text = message,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(onClick = onDismiss) { Text("X") }
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "⚠ $message",
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = onDismiss, contentPadding = PaddingValues(0.dp)) {
+                    Text("✕", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                }
+            }
         }
     }
 }
 
 @Composable
 fun SuccessBanner(onDismiss: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        modifier = Modifier.fillMaxWidth().padding(8.dp)
-    ) {
-        Row(
-            Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+    AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         ) {
-            Text(
-                text = "✓ Guardado correctamente",
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(onClick = onDismiss) { Text("X") }
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "✓ Guardado correctamente",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = onDismiss, contentPadding = PaddingValues(0.dp)) {
+                    Text("✕", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TagChip(label: String) {
+    SuggestionChip(
+        onClick = {},
+        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+        modifier = Modifier.padding(end = 4.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+fun SectionHeader(title: String, subtitle: String? = null) {
+    Column(Modifier.padding(bottom = 12.dp)) {
+        Text(title, style = MaterialTheme.typography.headlineSmall)
+        if (subtitle != null) {
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
