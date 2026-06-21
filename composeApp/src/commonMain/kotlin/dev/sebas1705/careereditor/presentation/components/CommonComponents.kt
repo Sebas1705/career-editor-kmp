@@ -4,9 +4,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -137,6 +142,106 @@ fun SectionHeader(title: String, subtitle: String? = null) {
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+// ── Dynamic list field (add/remove chips) ─────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DynamicListField(
+    label: String,
+    items: List<String>,
+    onItemsChange: (List<String>) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Añadir elemento"
+) {
+    var input by remember { mutableStateOf("") }
+
+    fun addItem() {
+        val v = input.trim()
+        if (v.isNotBlank() && v !in items) { onItemsChange(items + v); input = "" }
+    }
+
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            if (items.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items.forEach { item ->
+                        InputChip(
+                            selected = false,
+                            onClick = { onItemsChange(items - item) },
+                            label = { Text(item, style = MaterialTheme.typography.labelSmall) },
+                            trailingIcon = { Icon(Icons.Default.Close, "Eliminar", modifier = Modifier.size(14.dp)) },
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    placeholder = { Text(placeholder, style = MaterialTheme.typography.bodySmall) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.small,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { addItem() })
+                )
+                Spacer(Modifier.width(8.dp))
+                FilledIconButton(onClick = ::addItem, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Default.Add, "Añadir")
+                }
+            }
+        }
+    }
+}
+
+// ── Id field ─────────────────────────────────────────────────────────────────
+
+@Composable
+fun IdField(value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(it.lowercase().replace(Regex("[^a-z0-9-]"), "")) },
+        label = { Text("ID (slug) *") },
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        supportingText = { Text("Solo letras minúsculas, números y guiones", style = MaterialTheme.typography.labelSmall) }
+    )
+}
+
+// ── Delete confirmation ────────────────────────────────────────────────────────
+
+@Composable
+fun DeleteButton(onClick: () -> Unit, enabled: Boolean = true) {
+    IconButton(onClick = onClick, enabled = enabled) {
+        Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error)
+    }
+}
+
+@Composable
+fun DeleteConfirmDialog(itemName: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar") },
+        text = { Text("¿Eliminar \"$itemName\"? Esta acción no se puede deshacer.") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Eliminar", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }
 
 /**

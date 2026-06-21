@@ -32,6 +32,7 @@ class CareerRepository(private val secureStorage: SecureStorage = SecureStorage(
     fun saveBaseUrl(url: String) = secureStorage.put(SecureKeys.API_BASE_URL, url.trim())
     fun getBaseUrl(): String = secureStorage.get(SecureKeys.API_BASE_URL) ?: DEFAULT_BASE_URL
 
+    // ── Updates ───────────────────────────────────────────────────────────────
     suspend fun updateLanguages(languages: Languages) = buildClient().updateLanguages(languages)
     suspend fun updatePersonal(personal: Personal) = buildClient().updatePersonal(personal)
     suspend fun updateJob(job: Job) = buildClient().updateJob(job)
@@ -40,4 +41,20 @@ class CareerRepository(private val secureStorage: SecureStorage = SecureStorage(
     suspend fun updateEducation(education: Education) = buildClient().updateEducation(education)
     suspend fun updateCertification(cert: Certification) = buildClient().updateCertification(cert)
     suspend fun updateSoftSkill(skill: SoftSkill) = buildClient().updateSoftSkill(skill)
+
+    // ── Creates ───────────────────────────────────────────────────────────────
+    suspend fun createJob(job: Job) = buildClient().createJob(job)
+    suspend fun createProject(project: Project) = buildClient().createProject(project)
+    suspend fun createSkill(skill: Skill) = buildClient().createSkill(skill)
+    suspend fun createEducation(education: Education) = buildClient().createEducation(education)
+    suspend fun createCertification(cert: Certification) = buildClient().createCertification(cert)
+    suspend fun createSoftSkill(skill: SoftSkill) = buildClient().createSoftSkill(skill)
+
+    // ── Deletes ───────────────────────────────────────────────────────────────
+    suspend fun deleteJob(id: String) = buildClient().deleteJob(id)
+    suspend fun deleteProject(id: String) = buildClient().deleteProject(id)
+    suspend fun deleteSkill(id: String) = buildClient().deleteSkill(id)
+    suspend fun deleteEducation(id: String) = buildClient().deleteEducation(id)
+    suspend fun deleteCertification(id: String) = buildClient().deleteCertification(id)
+    suspend fun deleteSoftSkill(id: String) = buildClient().deleteSoftSkill(id)
 }

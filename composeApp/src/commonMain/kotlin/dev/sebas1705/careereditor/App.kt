@@ -154,31 +154,52 @@ private fun MainScaffold(
                         selectedLangCode = selectedLangCode,
                         onSelectLang = viewModel::selectLanguage,
                         onSave = viewModel::saveJob,
+                        onCreate = viewModel::createJob,
+                        onDelete = viewModel::deleteJob,
                         onClearSuccess = viewModel::clearSaveSuccess,
                         onClearError = viewModel::clearError
                     )
                     Section.PROJECTS -> ProjectsScreen(
-                        state, viewModel::saveProject, viewModel::clearSaveSuccess, viewModel::clearError
+                        state = state,
+                        onSave = viewModel::saveProject,
+                        onCreate = viewModel::createProject,
+                        onDelete = viewModel::deleteProject,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
                     )
                     Section.SKILLS -> SkillsScreen(
-                        state, viewModel::saveSkill, viewModel::clearSaveSuccess, viewModel::clearError
+                        state = state,
+                        onSave = viewModel::saveSkill,
+                        onCreate = viewModel::createSkill,
+                        onDelete = viewModel::deleteSkill,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
                     )
                     Section.EDUCATION -> EducationScreen(
                         state = state,
                         selectedLangCode = selectedLangCode,
                         onSelectLang = viewModel::selectLanguage,
                         onSave = viewModel::saveEducation,
+                        onCreate = viewModel::createEducation,
+                        onDelete = viewModel::deleteEducation,
                         onClearSuccess = viewModel::clearSaveSuccess,
                         onClearError = viewModel::clearError
                     )
                     Section.CERTIFICATIONS -> CertificationsScreen(
-                        state, viewModel::saveCertification, viewModel::clearSaveSuccess, viewModel::clearError
+                        state = state,
+                        onSave = viewModel::saveCertification,
+                        onCreate = viewModel::createCertification,
+                        onDelete = viewModel::deleteCertification,
+                        onClearSuccess = viewModel::clearSaveSuccess,
+                        onClearError = viewModel::clearError
                     )
                     Section.SOFT_SKILLS -> SoftSkillsScreen(
                         state = state,
                         selectedLangCode = selectedLangCode,
                         onSelectLang = viewModel::selectLanguage,
                         onSave = viewModel::saveSoftSkill,
+                        onCreate = viewModel::createSoftSkill,
+                        onDelete = viewModel::deleteSoftSkill,
                         onClearSuccess = viewModel::clearSaveSuccess,
                         onClearError = viewModel::clearError
                     )

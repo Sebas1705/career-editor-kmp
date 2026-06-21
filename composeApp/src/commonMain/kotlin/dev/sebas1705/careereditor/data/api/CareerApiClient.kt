@@ -42,10 +42,11 @@ class CareerApiClient(
     suspend fun getCertifications(): List<Certification> = httpClient.get("$baseUrl/certifications").body()
     suspend fun getSoftSkills(): List<SoftSkill> = httpClient.get("$baseUrl/soft-skills").body()
 
-    /** Returns true if the API responds with 2xx (token + URL valid) */
     suspend fun validateConnection(): Boolean = runCatching {
         httpClient.get(baseUrl).status.isSuccess()
     }.getOrDefault(false)
+
+    // ── Singular updates ──────────────────────────────────────────────────────
 
     suspend fun updateLanguages(languages: Languages): Languages =
         httpClient.put("$baseUrl/languages") {
@@ -56,6 +57,8 @@ class CareerApiClient(
         httpClient.put("$baseUrl/personal") {
             contentType(ContentType.Application.Json); setBody(personal)
         }.body()
+
+    // ── PATCH (update existing) ───────────────────────────────────────────────
 
     suspend fun updateJob(job: Job): Job =
         httpClient.patch("$baseUrl/jobs/${job.id}") {
@@ -86,4 +89,56 @@ class CareerApiClient(
         httpClient.patch("$baseUrl/soft-skills/${skill.id}") {
             contentType(ContentType.Application.Json); setBody(skill)
         }.body()
+
+    // ── POST (create new) ─────────────────────────────────────────────────────
+
+    suspend fun createJob(job: Job): Job =
+        httpClient.post("$baseUrl/jobs") {
+            contentType(ContentType.Application.Json); setBody(job)
+        }.body()
+
+    suspend fun createProject(project: Project): Project =
+        httpClient.post("$baseUrl/projects") {
+            contentType(ContentType.Application.Json); setBody(project)
+        }.body()
+
+    suspend fun createSkill(skill: Skill): Skill =
+        httpClient.post("$baseUrl/skills") {
+            contentType(ContentType.Application.Json); setBody(skill)
+        }.body()
+
+    suspend fun createEducation(education: Education): Education =
+        httpClient.post("$baseUrl/education") {
+            contentType(ContentType.Application.Json); setBody(education)
+        }.body()
+
+    suspend fun createCertification(cert: Certification): Certification =
+        httpClient.post("$baseUrl/certifications") {
+            contentType(ContentType.Application.Json); setBody(cert)
+        }.body()
+
+    suspend fun createSoftSkill(skill: SoftSkill): SoftSkill =
+        httpClient.post("$baseUrl/soft-skills") {
+            contentType(ContentType.Application.Json); setBody(skill)
+        }.body()
+
+    // ── DELETE ────────────────────────────────────────────────────────────────
+
+    suspend fun deleteJob(id: String): Job =
+        httpClient.delete("$baseUrl/jobs/$id").body()
+
+    suspend fun deleteProject(id: String): Project =
+        httpClient.delete("$baseUrl/projects/$id").body()
+
+    suspend fun deleteSkill(id: String): Skill =
+        httpClient.delete("$baseUrl/skills/$id").body()
+
+    suspend fun deleteEducation(id: String): Education =
+        httpClient.delete("$baseUrl/education/$id").body()
+
+    suspend fun deleteCertification(id: String): Certification =
+        httpClient.delete("$baseUrl/certifications/$id").body()
+
+    suspend fun deleteSoftSkill(id: String): SoftSkill =
+        httpClient.delete("$baseUrl/soft-skills/$id").body()
 }

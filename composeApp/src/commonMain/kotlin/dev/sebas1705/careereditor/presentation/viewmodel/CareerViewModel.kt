@@ -55,7 +55,6 @@ class CareerViewModel(
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
-    /** The language code currently selected for viewing/editing. */
     private val _selectedLangCode = MutableStateFlow("en")
     val selectedLangCode: StateFlow<String> = _selectedLangCode.asStateFlow()
 
@@ -119,7 +118,7 @@ class CareerViewModel(
 
     fun selectLanguage(code: String) { _selectedLangCode.value = code }
 
-    // ── Data ──────────────────────────────────────────────────────────────────
+    // ── Data load ─────────────────────────────────────────────────────────────
 
     fun loadAll() {
         viewModelScope.launch {
@@ -153,22 +152,24 @@ class CareerViewModel(
                 val result = request()
                 _uiState.value = onSuccess(result).copy(saveSuccess = true)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error al guardar")
             }
         }
     }
 
+    // ── Singular saves ────────────────────────────────────────────────────────
+
     fun saveLanguages(languages: Languages) = saveItem(
         request = { repository.updateLanguages(languages) },
-        onSuccess = { updated ->
-            _uiState.value.copy(isLoading = false, languages = updated)
-        }
+        onSuccess = { updated -> _uiState.value.copy(isLoading = false, languages = updated) }
     )
 
     fun savePersonal(personal: Personal) = saveItem(
         request = { repository.updatePersonal(personal) },
         onSuccess = { _uiState.value.copy(isLoading = false, personal = it) }
     )
+
+    // ── Updates (PATCH) ───────────────────────────────────────────────────────
 
     fun saveJob(job: Job) = saveItem(
         request = { repository.updateJob(job) },
@@ -211,6 +212,72 @@ class CareerViewModel(
             _uiState.value.copy(isLoading = false, softSkills = _uiState.value.softSkills.map { if (it.id == skill.id) updated else it })
         }
     )
+
+    // ── Creates (POST) ────────────────────────────────────────────────────────
+
+    fun createJob(job: Job) = saveItem(
+        request = { repository.createJob(job) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, jobs = _uiState.value.jobs + created) }
+    )
+
+    fun createProject(project: Project) = saveItem(
+        request = { repository.createProject(project) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, projects = _uiState.value.projects + created) }
+    )
+
+    fun createSkill(skill: Skill) = saveItem(
+        request = { repository.createSkill(skill) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, skills = _uiState.value.skills + created) }
+    )
+
+    fun createEducation(education: Education) = saveItem(
+        request = { repository.createEducation(education) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, education = _uiState.value.education + created) }
+    )
+
+    fun createCertification(cert: Certification) = saveItem(
+        request = { repository.createCertification(cert) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, certifications = _uiState.value.certifications + created) }
+    )
+
+    fun createSoftSkill(skill: SoftSkill) = saveItem(
+        request = { repository.createSoftSkill(skill) },
+        onSuccess = { created -> _uiState.value.copy(isLoading = false, softSkills = _uiState.value.softSkills + created) }
+    )
+
+    // ── Deletes ───────────────────────────────────────────────────────────────
+
+    fun deleteJob(id: String) = saveItem(
+        request = { repository.deleteJob(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, jobs = _uiState.value.jobs.filter { it.id != id }) }
+    )
+
+    fun deleteProject(id: String) = saveItem(
+        request = { repository.deleteProject(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, projects = _uiState.value.projects.filter { it.id != id }) }
+    )
+
+    fun deleteSkill(id: String) = saveItem(
+        request = { repository.deleteSkill(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, skills = _uiState.value.skills.filter { it.id != id }) }
+    )
+
+    fun deleteEducation(id: String) = saveItem(
+        request = { repository.deleteEducation(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, education = _uiState.value.education.filter { it.id != id }) }
+    )
+
+    fun deleteCertification(id: String) = saveItem(
+        request = { repository.deleteCertification(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, certifications = _uiState.value.certifications.filter { it.id != id }) }
+    )
+
+    fun deleteSoftSkill(id: String) = saveItem(
+        request = { repository.deleteSoftSkill(id) },
+        onSuccess = { _uiState.value.copy(isLoading = false, softSkills = _uiState.value.softSkills.filter { it.id != id }) }
+    )
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
 
     fun clearSaveSuccess() { _uiState.value = _uiState.value.copy(saveSuccess = false) }
     fun clearError() { _uiState.value = _uiState.value.copy(error = null) }
