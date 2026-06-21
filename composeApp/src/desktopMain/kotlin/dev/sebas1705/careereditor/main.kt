@@ -8,7 +8,8 @@ import androidx.compose.ui.window.rememberWindowState
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Career Editor",
+        title = "Folio",
+        icon = FolioIconPainter,
         state = rememberWindowState(width = 900.dp, height = 700.dp)
     ) {
         App()

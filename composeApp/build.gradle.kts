@@ -77,8 +77,10 @@ compose.desktop {
         mainClass = "dev.sebas1705.careereditor.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "CareerEditor"
+            packageName = "Folio"
             packageVersion = "1.1.0"
+            description = "Career portfolio editor"
+            vendor = "Sebastián Entrerrios García"
         }
     }
 }
