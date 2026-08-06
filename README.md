@@ -29,7 +29,7 @@ composeApp/
 ## Getting started
 
 ```bash
-git clone https://github.com/Sebas1705/career-editor-kmp.git
+git clone https://github.com/Sebas1705Carreer/career-editor-kmp.git
 cd career-editor-kmp
 ```
 
@@ -46,4 +46,4 @@ cd career-editor-kmp
 
 ## Related
 
-- [career-api-worker](https://github.com/Sebas1705/career-api-worker) — backend API (Cloudflare Workers + KV)
+- [career-api-worker](https://github.com/Sebas1705Carreer/career-api-worker) — backend API (Cloudflare Workers + KV)
