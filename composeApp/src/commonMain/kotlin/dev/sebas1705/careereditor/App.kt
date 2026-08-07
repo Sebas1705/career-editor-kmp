@@ -126,7 +126,8 @@ private fun MainScaffold(
             }
         }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        // imePadding: en Android el teclado empuja el contenido en vez de taparlo
+        Box(Modifier.fillMaxSize().padding(padding).imePadding()) {
             AnimatedContent(
                 targetState = currentSection,
                 transitionSpec = {

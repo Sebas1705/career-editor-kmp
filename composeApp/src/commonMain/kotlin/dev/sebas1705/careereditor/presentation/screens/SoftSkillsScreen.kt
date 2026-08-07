@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.SoftSkill
 import dev.sebas1705.careereditor.data.model.resolve
@@ -76,7 +77,10 @@ fun SoftSkillsScreen(
                     if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
                     state.error?.let { ErrorBanner(it, onClearError) }
 
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 88.dp) // el FAB no tapa la última tarjeta
+                    ) {
                         items(state.softSkills) { skill ->
                             Card(
                                 onClick = { selected = skill },
@@ -144,7 +148,7 @@ fun SoftSkillEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Nueva habilidad" else skill.name.resolve(lang).ifBlank { skill.id }, maxLines = 1) },
+                title = { Text(if (isNew) "Nueva habilidad" else skill.name.resolve(lang).ifBlank { skill.id }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = {
                     if (!isNew) DeleteButton(onClick = { showDeleteDialog = true }, enabled = !state.isLoading)

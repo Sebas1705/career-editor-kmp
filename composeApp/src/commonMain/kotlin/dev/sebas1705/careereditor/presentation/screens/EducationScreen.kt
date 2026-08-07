@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Education
 import dev.sebas1705.careereditor.data.model.resolve
@@ -75,7 +76,10 @@ fun EducationScreen(
                     if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
                     state.error?.let { ErrorBanner(it, onClearError) }
 
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 88.dp) // el FAB no tapa la última tarjeta
+                    ) {
                         items(state.education) { edu ->
                             Card(
                                 onClick = { selected = edu },
@@ -150,7 +154,7 @@ fun EducationEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Nueva educación" else school.ifBlank { education.id }, maxLines = 1) },
+                title = { Text(if (isNew) "Nueva educación" else school.ifBlank { education.id }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = {
                     if (!isNew) DeleteButton(onClick = { showDeleteDialog = true }, enabled = !state.isLoading)

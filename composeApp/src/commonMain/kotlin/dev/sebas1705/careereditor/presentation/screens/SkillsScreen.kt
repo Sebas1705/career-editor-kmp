@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Skill
 import dev.sebas1705.careereditor.presentation.components.*
@@ -68,7 +69,7 @@ fun SkillsScreen(
                 state.error?.let { ErrorBanner(it, onClearError) }
 
                 val grouped = state.skills.groupBy { it.category }
-                LazyColumn {
+                LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) { // el FAB no tapa la última fila
                     grouped.forEach { (category, skills) ->
                         item {
                             Text(
@@ -156,7 +157,7 @@ fun SkillEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Nueva habilidad" else skill.name, maxLines = 1) },
+                title = { Text(if (isNew) "Nueva habilidad" else skill.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = {
                     if (!isNew) DeleteButton(onClick = { showDeleteDialog = true }, enabled = !state.isLoading)

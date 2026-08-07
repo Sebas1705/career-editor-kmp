@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Job
 import dev.sebas1705.careereditor.data.model.resolve
@@ -77,7 +78,10 @@ fun JobsScreen(
                     if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
                     state.error?.let { ErrorBanner(it, onClearError) }
 
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 88.dp) // el FAB no tapa la última tarjeta
+                    ) {
                         items(state.jobs) { job ->
                             Card(
                                 onClick = { selected = job },
@@ -88,9 +92,9 @@ fun JobsScreen(
                             ) {
                                 Column(Modifier.padding(16.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text(job.role.resolve(selectedLangCode), style = MaterialTheme.typography.titleMedium)
-                                            Text(job.company, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                                            Text(job.role.resolve(selectedLangCode), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                            Text(job.company, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                         AssistChip(
                                             onClick = {},
@@ -170,7 +174,7 @@ fun JobEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Nuevo trabajo" else company.ifBlank { job.id }, maxLines = 1) },
+                title = { Text(if (isNew) "Nuevo trabajo" else company.ifBlank { job.id }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = {
                     if (!isNew) DeleteButton(onClick = { showDeleteDialog = true }, enabled = !state.isLoading)

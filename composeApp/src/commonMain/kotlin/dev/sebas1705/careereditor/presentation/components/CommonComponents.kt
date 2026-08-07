@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,17 +151,22 @@ fun TagChip(label: String) {
 fun SectionHeader(title: String, subtitle: String? = null) {
     Column(Modifier.padding(bottom = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // weight + ellipsis: la ruta cede espacio antes de pisar el contador
             Text(
                 "~/portfolio/${title.toSlug()}",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
-            Spacer(Modifier.weight(1f))
             if (subtitle != null) {
+                Spacer(Modifier.width(12.dp))
                 Text(
                     "[$subtitle]",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
             }
         }

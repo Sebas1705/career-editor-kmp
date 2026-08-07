@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sebas1705.careereditor.data.model.Project
 import dev.sebas1705.careereditor.data.model.resolve
@@ -70,7 +71,10 @@ fun ProjectsScreen(
                 if (state.saveSuccess) SuccessBanner(onDismiss = onClearSuccess)
                 state.error?.let { ErrorBanner(it, onClearError) }
 
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 88.dp) // el FAB no tapa la última tarjeta
+                ) {
                     items(state.projects) { project ->
                         Card(
                             onClick = { selected = project },
@@ -83,12 +87,13 @@ fun ProjectsScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(contextIcons[project.context] ?: "📁", style = MaterialTheme.typography.titleMedium)
                                     Column(Modifier.weight(1f)) {
-                                        Text(project.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(project.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
                                             project.desc.resolve("en"),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -158,7 +163,7 @@ fun ProjectEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Nuevo proyecto" else project.name, maxLines = 1) },
+                title = { Text(if (isNew) "Nuevo proyecto" else project.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
                 actions = {
                     if (!isNew) DeleteButton(onClick = { showDeleteDialog = true }, enabled = !state.isLoading)
