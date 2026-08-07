@@ -153,7 +153,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(24.dp))
 
         Text(
-            "Career Editor v1.1.0 · career-api.sebas1705.workers.dev",
+            "Folio v1.2.0 · career-api.sebas1705.workers.dev",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline
         )

@@ -13,12 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.sebas1705.careereditor.presentation.components.FolioMark
 
 @Composable
 fun LoginScreen(
@@ -51,33 +53,27 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo / brand
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(88.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        "CE",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
+            // Marca Folio
+            FolioMark(size = 88.dp)
 
             Spacer(Modifier.height(24.dp))
 
             Text(
-                "Career Editor",
-                style = MaterialTheme.typography.headlineLarge,
+                "Folio",
+                style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "Gestiona tu perfil profesional",
+                "El backstage de tu portfolio",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "career-api.sebas1705.workers.dev",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(Modifier.height(40.dp))
@@ -138,7 +134,8 @@ fun LoginScreen(
                         keyboardActions = KeyboardActions(onDone = { if (token.isNotBlank()) onLogin(token) }),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
                     )
 
                     Spacer(Modifier.height(16.dp))

@@ -22,11 +22,11 @@ private enum class Section(
 ) {
     DASHBOARD("Inicio", Icons.Default.Home, "dashboard"),
     PERSONAL("Personal", Icons.Default.Person, "personal"),
-    JOBS("Trabajos", Icons.Default.Settings, "jobs"),
+    JOBS("Trabajos", Icons.Default.Build, "jobs"),
     PROJECTS("Proyectos", Icons.Default.Edit, "projects"),
     SKILLS("Skills", Icons.Default.Star, "skills"),
-    EDUCATION("Educación", Icons.Default.Star, "education"),
-    CERTIFICATIONS("Certs", Icons.Default.Add, "certifications"),
+    EDUCATION("Educación", Icons.Default.DateRange, "education"),
+    CERTIFICATIONS("Certs", Icons.Default.Done, "certifications"),
     SOFT_SKILLS("Soft", Icons.Default.Favorite, "soft-skills"),
     SETTINGS("Ajustes", Icons.Default.Settings, "settings")
 }

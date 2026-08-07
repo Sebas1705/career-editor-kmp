@@ -3,7 +3,10 @@ package dev.sebas1705.careereditor.presentation.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,9 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sebas1705.careereditor.data.model.Language
+import dev.sebas1705.careereditor.utils.toSlug
 
 @Composable
 fun SectionField(
@@ -134,13 +141,61 @@ fun TagChip(label: String) {
     )
 }
 
+/**
+ * Cabecera de archivo — la firma visual de Folio.
+ * Eyebrow monospace con la ruta de la sección (`~/portfolio/<slug>`), título
+ * grande y, a la derecha, el dato de la sección como contador mono `[...]`.
+ */
 @Composable
 fun SectionHeader(title: String, subtitle: String? = null) {
-    Column(Modifier.padding(bottom = 12.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineSmall)
-        if (subtitle != null) {
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.padding(bottom = 16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "~/portfolio/${title.toSlug()}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.weight(1f))
+            if (subtitle != null) {
+                Text(
+                    "[$subtitle]",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+        Spacer(Modifier.height(4.dp))
+        Text(title, style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.surfaceVariant)
+    }
+}
+
+/**
+ * Lettermark de Folio dibujado en Compose: cuadrado índigo redondeado al 18%,
+ * "F" en blanco y punto teal — el mismo diseño que el icono de la app.
+ */
+@Composable
+fun FolioMark(size: Dp = 56.dp) {
+    Box(
+        Modifier
+            .size(size)
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(size * 0.18f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "F",
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontSize = (size.value * 0.46f).sp,
+            fontWeight = FontWeight.Bold
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(size * 0.14f)
+                .size(size * 0.14f)
+                .background(MaterialTheme.colorScheme.secondary, CircleShape)
+        )
     }
 }
 
