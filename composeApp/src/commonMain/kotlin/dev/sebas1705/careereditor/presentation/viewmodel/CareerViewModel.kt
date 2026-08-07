@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.sebas1705.careereditor.data.model.*
 import dev.sebas1705.careereditor.data.repository.CareerRepository
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,13 +90,20 @@ class CareerViewModel(
             _loginLoading.value = true
             _loginError.value = null
             repository.saveToken(token)
-            val ok = repository.validateConnection()
-            if (ok) {
-                _authState.value = AuthState.Authenticated
-                loadAll()
-            } else {
-                repository.clearToken()
-                _loginError.value = "Token inválido o API no accesible"
+            when {
+                !repository.validateConnection() -> {
+                    repository.clearToken()
+                    _loginError.value = "API no accesible"
+                }
+                // Las lecturas son públicas: hay que validar el token contra una escritura real
+                !repository.validateAuth() -> {
+                    repository.clearToken()
+                    _loginError.value = "Token inválido: la API rechaza las escrituras (401)"
+                }
+                else -> {
+                    _authState.value = AuthState.Authenticated
+                    loadAll()
+                }
             }
             _loginLoading.value = false
         }
@@ -151,6 +160,11 @@ class CareerViewModel(
             try {
                 val result = request()
                 _uiState.value = onSuccess(result).copy(saveSuccess = true)
+            } catch (e: ClientRequestException) {
+                val msg = if (e.response.status == HttpStatusCode.Unauthorized)
+                    "Token inválido o caducado: vuelve a iniciar sesión en Ajustes"
+                else "Error ${e.response.status.value} al guardar"
+                _uiState.value = _uiState.value.copy(isLoading = false, error = msg)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error al guardar")
             }

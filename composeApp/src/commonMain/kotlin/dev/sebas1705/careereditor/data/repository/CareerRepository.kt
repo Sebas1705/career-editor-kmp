@@ -6,6 +6,10 @@ import dev.sebas1705.careereditor.data.model.*
 import dev.sebas1705.careereditor.security.SecureKeys
 import dev.sebas1705.careereditor.security.SecureStorage
 
+// BOM (U+FEFF) y zero-width space (U+200B) llegan al pegar desde algunos portapapeles,
+// trim() no los considera whitespace y rompen el Authorization header.
+private fun String.trimBom(): String = trim('\uFEFF', '\u200B')
+
 class CareerRepository(private val secureStorage: SecureStorage = SecureStorage()) {
 
     private fun buildClient(): CareerApiClient {
@@ -24,8 +28,9 @@ class CareerRepository(private val secureStorage: SecureStorage = SecureStorage(
     suspend fun getSoftSkills() = buildClient().getSoftSkills()
 
     suspend fun validateConnection(): Boolean = buildClient().validateConnection()
+    suspend fun validateAuth(): Boolean = buildClient().validateAuth()
 
-    fun saveToken(token: String) = secureStorage.put(SecureKeys.API_TOKEN, token.trim())
+    fun saveToken(token: String) = secureStorage.put(SecureKeys.API_TOKEN, token.trim().trimBom())
     fun getToken(): String? = secureStorage.get(SecureKeys.API_TOKEN)
     fun clearToken() = secureStorage.remove(SecureKeys.API_TOKEN)
 

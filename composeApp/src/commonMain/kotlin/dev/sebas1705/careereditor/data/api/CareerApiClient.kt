@@ -21,6 +21,9 @@ class CareerApiClient(
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     val httpClient = HttpClient {
+        // Sin esto, un 401/4xx no lanza excepción y el JSON de error se
+        // deserializa en un modelo vacío: la app cree que guardó y no guardó.
+        expectSuccess = true
         install(ContentNegotiation) { json(json) }
         install(Logging) { level = LogLevel.INFO }
         if (!token.isNullOrBlank()) {
@@ -44,6 +47,16 @@ class CareerApiClient(
 
     suspend fun validateConnection(): Boolean = runCatching {
         httpClient.get(baseUrl).status.isSuccess()
+    }.getOrDefault(false)
+
+    /**
+     * Valida que el token autoriza escrituras: PATCH /languages con cuerpo vacío
+     * es un merge sin cambios (no-op) que devuelve 200 con auth valida y 401 sin ella.
+     */
+    suspend fun validateAuth(): Boolean = runCatching {
+        httpClient.patch("$baseUrl/languages") {
+            contentType(ContentType.Application.Json); setBody("{}")
+        }.status.isSuccess()
     }.getOrDefault(false)
 
     // ── Singular updates ──────────────────────────────────────────────────────
