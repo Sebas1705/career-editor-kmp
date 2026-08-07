@@ -18,7 +18,9 @@ class CareerApiClient(
     private val baseUrl: String = DEFAULT_BASE_URL,
     private val token: String? = null
 ) {
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    // coerceInputValues: un null explicito en un campo no-nullable cae al valor
+    // por defecto en vez de tirar la deserializacion entera (y con ella loadAll).
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
     val httpClient = HttpClient {
         // Sin esto, un 401/4xx no lanza excepción y el JSON de error se

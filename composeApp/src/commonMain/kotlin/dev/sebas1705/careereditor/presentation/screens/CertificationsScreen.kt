@@ -126,7 +126,7 @@ fun CertificationEditScreen(
 
     fun buildCert(): Certification {
         val cid = if (isNew) id else cert.id
-        return Certification(id = cid, name = name, issuer = issuer, date = date, url = url)
+        return Certification(id = cid, name = name, issuer = issuer, date = date, url = url.ifBlank { null })
     }
 
     Scaffold(

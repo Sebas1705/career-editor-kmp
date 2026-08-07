@@ -8,5 +8,6 @@ data class Certification(
     val name: String = "",
     val issuer: String = "",
     val date: String = "",
-    val url: String = ""
+    // Nullable: la API sirve url null en certificaciones "in progress"
+    val url: String? = null
 )
