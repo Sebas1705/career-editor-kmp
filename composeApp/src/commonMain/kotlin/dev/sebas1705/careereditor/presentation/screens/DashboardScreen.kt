@@ -40,10 +40,10 @@ fun DashboardScreen(state: CareerUiState, onNavigate: (String) -> Unit) {
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
-                            .size(56.dp)
+                            .size(48.dp)
                             .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {

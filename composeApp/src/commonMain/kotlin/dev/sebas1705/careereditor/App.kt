@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sebas1705.careereditor.presentation.components.LoadingScreen
 import dev.sebas1705.careereditor.presentation.screens.*
@@ -120,7 +122,17 @@ private fun MainScaffold(
                             viewModel.clearError()
                         },
                         icon = { Icon(section.icon, section.label) },
-                        label = { Text(section.label) }
+                        // Estilo sans explícito: el labelMedium del tema es mono
+                        // (más ancho) y NavigationBar lo usa por defecto — con
+                        // él, labels como "Proyectos" partían en dos líneas.
+                        label = {
+                            Text(
+                                section.label,
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 11.sp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     )
                 }
             }

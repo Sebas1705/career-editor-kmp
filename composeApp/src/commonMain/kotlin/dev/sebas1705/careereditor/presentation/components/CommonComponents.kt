@@ -143,13 +143,13 @@ fun TagChip(label: String) {
 }
 
 /**
- * Cabecera de archivo — la firma visual de Folio.
- * Eyebrow monospace con la ruta de la sección (`~/portfolio/<slug>`), título
- * grande y, a la derecha, el dato de la sección como contador mono `[...]`.
+ * Cabecera de archivo — la firma visual de Folio, en una sola línea.
+ * El TopAppBar ya nombra la sección; aquí solo la ruta monospace
+ * (`~/portfolio/<slug>`) y el dato de la sección como contador `[...]`.
  */
 @Composable
 fun SectionHeader(title: String, subtitle: String? = null) {
-    Column(Modifier.padding(bottom = 16.dp)) {
+    Column(Modifier.padding(bottom = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // weight + ellipsis: la ruta cede espacio antes de pisar el contador
             Text(
@@ -170,9 +170,7 @@ fun SectionHeader(title: String, subtitle: String? = null) {
                 )
             }
         }
-        Spacer(Modifier.height(4.dp))
-        Text(title, style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
@@ -329,11 +327,13 @@ fun LanguageTabs(
             Tab(
                 selected = lang.code == selectedCode,
                 onClick = { onSelect(lang.code) },
+                // Una sola línea: dos textos apilados hacían el tab demasiado alto
                 text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(lang.code.uppercase(), style = MaterialTheme.typography.labelLarge)
-                        Text(lang.labelNative, style = MaterialTheme.typography.labelSmall)
-                    }
+                    Text(
+                        "${lang.code.uppercase()} · ${lang.labelNative}",
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
+                    )
                 }
             )
         }
