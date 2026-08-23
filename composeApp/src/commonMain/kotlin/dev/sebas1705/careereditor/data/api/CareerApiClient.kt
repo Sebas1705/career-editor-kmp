@@ -12,7 +12,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-const val DEFAULT_BASE_URL = "https://career-api.sebas1705.workers.dev"
+const val DEFAULT_BASE_URL = "https://api.sebas1705.dev"
 
 class CareerApiClient(
     private val baseUrl: String = DEFAULT_BASE_URL,

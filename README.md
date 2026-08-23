@@ -1,6 +1,6 @@
 # career-editor-kmp
 
-KMP desktop and Android editor for managing data in [career-api](https://career-api.sebas1705.workers.dev) — the personal career portfolio API.
+KMP desktop and Android editor for managing data in [career-api](https://api.sebas1705.dev) — the personal career portfolio API.
 
 **Platforms:** Android · Desktop (JVM)
 
