@@ -8,3 +8,9 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Signing material. Losing this file means never being able to update the installed
+# app again; committing it means anyone with repo access can sign as you.
+*.jks
+*.jks.base64
+*.p12
