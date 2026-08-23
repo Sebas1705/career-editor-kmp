@@ -38,9 +38,13 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
+      # The executable bit is set in the repository, but a checkout that loses it
+      # fails with a bare "Permission denied" that says nothing about the cause.
       - name: Build installer
-        run: ./gradlew :composeApp:packageDistributionForCurrentOS --no-daemon
         shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :composeApp:packageDistributionForCurrentOS --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: folio-${{ matrix.format }}
@@ -77,7 +81,9 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew :composeApp:assembleRelease --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew :composeApp:assembleRelease --no-daemon
 
       - name: Name the APK after the tag
         run: |
